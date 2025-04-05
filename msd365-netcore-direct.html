@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dynamics 365 to Netcore Integration (Single File)</title>
     <style>
-        /* General Styling (Same as before) */
+        /* General Styling */
         body{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;line-height:1.6;margin:0;padding:0;background-color:#f4f7f9;color:#333}
         .container{max-width:900px;margin:30px auto;padding:25px;background-color:#fff;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
         h1,h2,h3{color:#2c3e50;border-bottom:2px solid #e0e0e0;padding-bottom:10px;margin-bottom:20px}
@@ -16,22 +16,22 @@
         code{font-family:"Consolas","Monaco","Courier New",monospace;background-color:#eef1f3;padding:2px 6px;border-radius:4px;font-size:.9em;color:#c7254e}
         .important-note{background-color:#fffbe6;border:1px solid #ffe58f;padding:15px;border-radius:4px;margin:15px 0}
         .important-note strong{color:#d46b08}
-        .important-note ul{margin-top:10px;margin-bottom:5px}
+        .important-note ul{margin-top:10px;margin-bottom:5px; padding-left: 20px;}
         .important-note li{margin-bottom:5px}
         .code-comment{color:#888} /* Style for comments within code blocks */
 
-        /* Tab Styling (Same as before) */
+        /* Tab Styling */
         .tabs{margin-bottom:0;border-bottom:1px solid #d4dadf;padding-bottom:-1px}
         .tab-button{padding:10px 20px;cursor:pointer;border:1px solid transparent;border-bottom:none;background-color:#f4f7f9;margin-right:5px;border-radius:5px 5px 0 0;font-size:1em;position:relative;bottom:-1px;transition:background-color .3s ease,border-color .3s ease}
         .tab-button:hover{background-color:#e9edf1}
         .tab-button.active{background-color:#fff;border-color:#d4dadf;border-bottom:1px solid #fff;font-weight:700;color:#3498db}
 
-        /* Tab Content Area Styling (Same as before) */
+        /* Tab Content Area Styling */
         .tab-content-wrapper{padding:20px;border:1px solid #d4dadf;border-top:none;background-color:#fff;border-radius:0 0 8px 8px;min-height:200px}
         .tab-pane{display:none}
         .tab-pane.active{display:block}
 
-        /* Code Block Styling (Same as before) */
+        /* Code Block Styling */
         pre{background-color:#2d2d2d;color:#ccc;padding:20px;border-radius:6px;overflow-x:auto;font-family:"Consolas","Monaco","Courier New",monospace;font-size:.9em;line-height:1.5;margin-top:15px;margin-bottom:15px}
         pre code{background-color:transparent;padding:0;color:inherit;font-size:inherit;border-radius:0}
         .tab-pane p,.dynamics-section p{margin-top:15px;margin-bottom:10px;font-style:italic;color:#555}
@@ -56,28 +56,194 @@
 
         <div class="dynamics-section">
             <h2>Dynamics 365 Implementation Approaches</h2>
-            <p>To initiate the call to Netcore, you first need logic within Dynamics 365 to trigger on an event (like Contact create/update), retrieve data, and make the API call.</p>
+            <p>
+                To initiate the call to Netcore, you first need logic within Dynamics 365 or an external application interacting with it. This logic will trigger (or query for changes), retrieve the necessary data from the Dynamics record, and then make the HTTP request to Netcore's API.
+            </p>
+            <p>Common methods include:</p>
             <ul>
-                <li><strong>Power Automate (Flow):</strong> [Recommended for Cloud] Low-code approach using Dataverse connector and HTTP action.</li>
-                <li><strong>C# Plugin / Custom Workflow Activity:</strong> Custom code for maximum flexibility, requires development and deployment.</li>
+                <li><strong>Power Automate (Flow):</strong> [Recommended for Cloud] A low-code approach using the Dataverse connector trigger ("When a row is added, modified...") and the built-in HTTP action.</li>
+                <li><strong>C# Plugin / Custom Workflow Activity:</strong> Custom .NET code running *inside* Dynamics, offering maximum flexibility but requiring development and deployment.</li>
+                <li><strong>External Application/Script (e.g., Python):</strong> An application running *outside* Dynamics that connects via the Web API to query data and then calls Netcore.</li>
+                <li><strong>Webhook + Serverless Function (e.g., Azure Function with Python):</strong> Dynamics calls an external webhook on events, triggering a function to process the data.</li>
             </ul>
-            <h3>Conceptual C# Plugin Example</h3>
-            <p>See the previous C# Plugin example for retrieving data *within* Dynamics and calling Netcore. Remember the disclaimers regarding placeholders, security, and testing.</p>
-            <h3>Power Automate (Flow) Outline</h3>
-             <p>Refer to the previous outline for setting up a Flow using the Dataverse trigger and HTTP action.</p>
-        </div>
 
+            <h3>Python Implementation Note</h3>
+            <p>
+                It's important to understand that **Python code cannot run directly *inside* the Dynamics 365 server-side event pipeline like a C# plugin**. The Dynamics server environment is based on .NET.
+            </p>
+            <p>
+                However, you can use Python effectively in an **external script or application** that interacts with Dynamics 365 via its Web API (OData).
+            </p>
+
+            <h3>Conceptual External Python Script Example</h3>
+            <p>
+                Below is a conceptual example of an *external* Python script. This script would run independently (e.g., as a scheduled task, or triggered externally) and would be responsible for authenticating with Dynamics 365, fetching data for a specific record (or querying for records), and then calling the Netcore API.
+            </p>
+            <div class="important-note">
+                <strong>Disclaimer:</strong> This Python script is a <strong>conceptual example</strong> for an external application.
+                <ul>
+                    <li>It <strong>omits functional OAuth authentication</strong> which is complex and requires the `msal` library (<code>pip install msal</code>) and a correctly configured Azure AD App Registration. The placeholder function will not work against a real Dynamics instance.</li>
+                    <li>Replace ALL placeholders (Dynamics URL, Netcore Keys, Entity/Field Names, Tenant/Client IDs/Secrets).</li>
+                    <li>Determine how the `RECORD_ID_TO_PROCESS` will be identified (e.g., querying, arguments, queue).</li>
+                    <li>Implement robust error handling, logging, and potentially retry logic.</li>
+                    <li>Never hardcode secrets (Client Secret, API Keys) in production code; use environment variables or secure secret management (like Azure Key Vault).</li>
+                </ul>
+            </div>
+            <pre><code class="language-python">
+# --- Conceptual External Python Script for Dynamics -&gt; Netcore Sync ---
+import requests
+import json
+import time # For potential delays/scheduling
+# MSAL library needed for proper authentication (e.g., pip install msal)
+# from msal import ConfidentialClientApplication # Or PublicClientApplication
+
+# --- Configuration ---
+NETCORE_API_KEY = 'YOUR_NETCORE_API_KEY' # &lt;&lt;&lt; REPLACE
+NETCORE_LIST_ID = 'YOUR_NETCORE_LIST_ID' # &lt;&lt;&lt; REPLACE
+NETCORE_BASE_URL = 'https://api.netcoresmartech.com/apiv2'
+
+DYNAMICS_API_ENDPOINT = "https://yourorg.api.crm[X].dynamics.com/api/data/v9.2/" # &lt;&lt;&lt; REPLACE
+ENTITY_PLURAL_NAME = "contacts"
+# How to get the Record ID depends on how this script is triggered
+RECORD_ID_TO_PROCESS = "GUID_OF_RECORD_TO_SYNC" # &lt;&lt;&lt; How is this obtained? Needs logic.
+
+# Dynamics App Registration Details (for Authentication) - PLACEHOLDERS
+AZURE_TENANT_ID = "YOUR_AZURE_TENANT_ID" # &lt;&lt;&lt; REPLACE
+DYNAMICS_CLIENT_ID = "YOUR_APP_CLIENT_ID" # &lt;&lt;&lt; REPLACE
+DYNAMICS_CLIENT_SECRET = "YOUR_APP_CLIENT_SECRET" # &lt;&lt;&lt; REPLACE (Or use Certificate)
+# Ensure scope includes the base Dynamics URL (remove trailing API path)
+DYNAMICS_SCOPE = [f"{DYNAMICS_API_ENDPOINT.replace('/api/data/v9.2/', '')}/.default"]
+
+# --- Function to get Dynamics Access Token (Conceptual - Needs MSAL Impl.) ---
+def get_dynamics_access_token():
+    <span class="code-comment">""" Placeholder for getting an OAuth token using MSAL (pip install msal). """</span>
+    print("!!! Attempting to get Dynamics Token (Conceptual - Needs MSAL Impl.) !!!")
+    # Example using Confidential Client (App Secret) - Needs msal library
+    # try:
+    #     app = ConfidentialClientApplication(
+    #         client_id=DYNAMICS_CLIENT_ID,
+    #         authority=f"https://login.microsoftonline.com/{AZURE_TENANT_ID}",
+    #         client_credential=DYNAMICS_CLIENT_SECRET,
+    #     )
+    #     result = app.acquire_token_for_client(scopes=DYNAMICS_SCOPE)
+    #     if "access_token" in result:
+    #         print("--- Successfully acquired Dynamics Access Token ---")
+    #         return result['access_token']
+    #     else: print("Error acquiring token:", result); return None
+    # except Exception as e: print(f"MSAL Exception: {e}"); return None
+    print("!!! Skipping Real Authentication - Returning Placeholder Token !!!")
+    return "PLACEHOLDER_ACCESS_TOKEN" # Replace with actual token retrieval call
+
+# --- Function to Fetch Data from Dynamics ---
+def fetch_dynamics_data(access_token, record_id):
+    <span class="code-comment">""" Fetches specific fields for a record using Dynamics Web API """</span>
+    if not access_token or access_token == "PLACEHOLDER_ACCESS_TOKEN":
+         print("ERROR: Valid access token required. Simulating data fetch.")
+         return { # Simulated data
+             "firstname": "Mike (Sim)", "lastname": "Py-Ext",
+             "emailaddress1": "mike.sim.ext@example.com", "mobilephone": "5550009999",
+             "contactid": record_id
+         } if access_token == "PLACEHOLDER_ACCESS_TOKEN" else None
+
+    fields_to_select = "$select=firstname,lastname,emailaddress1,mobilephone" # &lt;&lt;&lt; REPLACE/VERIFY schema names
+    fetch_url = f"{DYNAMICS_API_ENDPOINT}{ENTITY_PLURAL_NAME}({record_id})?{fields_to_select}"
+    headers = {
+        'Authorization': f'Bearer {access_token}', # Crucial Header
+        'Accept': 'application/json',
+        'OData-MaxVersion': '4.0', 'OData-Version': '4.0', 'Prefer': 'odata.include-annotations="*"',
+    }
+    print(f"Fetching Dynamics data from: {fetch_url}")
+    try:
+        response = requests.get(fetch_url, headers=headers, timeout=30)
+        response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+        print(f"--- Dynamics fetch successful (Status: {response.status_code}) ---")
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"ERROR fetching Dynamics data: {e}")
+        if e.response is not None:
+             print(f"Dynamics Response Status: {e.response.status_code}")
+             print(f"Dynamics Response Body: {e.response.text}")
+        return None
+
+# --- Function to Call Netcore API ---
+def call_netcore_api(contact_data):
+    <span class="code-comment">""" Sends the prepared contact data to the Netcore API """</span>
+    if not contact_data or not contact_data.get("EMAIL"):
+         print("ERROR: Invalid or missing email in contact data for Netcore.")
+         return False
+
+    netcore_url = f"{NETCORE_BASE_URL}?type=contact&amp;activity=add&amp;apikey={NETCORE_API_KEY}&amp;listid={NETCORE_LIST_ID}"
+    # Prepare Netcore specific payload
+    netcore_data_json = json.dumps(contact_data)
+    netcore_payload = {'data': netcore_data_json} # Form data: key 'data', value is JSON string
+    netcore_headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+
+    print(f"Calling Netcore URL: {netcore_url}")
+    try:
+        response = requests.post(netcore_url, data=netcore_payload, headers=netcore_headers, timeout=30)
+        response.raise_for_status()
+        print(f"Netcore Status Code: {response.status_code}")
+        # Optional: Log response body for debugging
+        # print(f"Netcore Response: {response.text}")
+        return True # Indicate success
+    except requests.exceptions.RequestException as e:
+        print(f"ERROR calling Netcore API: {e}")
+        if e.response is not None:
+             print(f"Netcore Response Status: {e.response.status_code}")
+             print(f"Netcore Response Body: {e.response.text}")
+        return False # Indicate failure
+
+# --- Main Script Logic ---
+def main_sync_process(record_id_to_sync):
+    <span class="code-comment">""" Orchestrates the sync process for a given record ID """</span>
+    print(f"\n--- Starting Sync Process for Record ID: {record_id_to_sync} ---")
+    dynamics_token = get_dynamics_access_token()
+    if not dynamics_token: print("Fatal: No Dynamics token. Aborting."); return
+
+    dynamics_data = fetch_dynamics_data(dynamics_token, record_id_to_sync)
+    if not dynamics_data: print(f"Fatal: Failed to fetch {record_id_to_sync}. Aborting."); return
+
+    contact_data_for_netcore = { # Map fields
+        "EMAIL": dynamics_data.get("emailaddress1"), "MOBILE": dynamics_data.get("mobilephone"),
+        "FIRST_NAME": dynamics_data.get("firstname"), "LAST_NAME": dynamics_data.get("lastname")
+        # Map other fields...
+    }
+    contact_data_for_netcore = {k: v for k, v in contact_data_for_netcore.items() if v is not None} # Filter nulls
+
+    if not contact_data_for_netcore.get("EMAIL"):
+        print(f"ERROR: Email missing for {record_id_to_sync}. Aborting sync."); return
+
+    print(f"Attempting to sync contact: {contact_data_for_netcore['EMAIL']} (Record: {record_id_to_sync})")
+    success = call_netcore_api(contact_data_for_netcore)
+    print(f"--- Sync {'successful' if success else 'failed'} for record {record_id_to_sync} ---")
+
+# --- Script Entry Point ---
+if __name__ == "__main__":
+    print("="*59)
+    print(" Conceptual External Python Sync Script for Dynamics->Netcore ")
+    print("="*59)
+    # In a real script, you would get the RECORD_ID_TO_PROCESS dynamically
+    if not RECORD_ID_TO_PROCESS or RECORD_ID_TO_PROCESS == "GUID_OF_RECORD_TO_SYNC":
+         print("WARNING: RECORD_ID_TO_PROCESS not set. Using a placeholder.")
+         RECORD_ID_TO_PROCESS = "PLACEHOLDER-GUID-12345" # Default for demo
+
+    main_sync_process(RECORD_ID_TO_PROCESS)
+    print("--- Script execution finished ---")
+
+            </code></pre>
+            <p>
+                This Python script needs to be run in an environment where Python and the `requests` library (and `msal` for real authentication) are installed. It connects externally to Dynamics 365 and requires careful handling of authentication and record identification.
+            </p>
+
+            <h3>Power Automate (Flow) Outline</h3>
+             <p>Using Power Automate is often simpler for Dynamics 365 Online. Refer to the previous outline for setting up a Flow using the Dataverse trigger and HTTP action.</p>
+        </div>
         <h2>Netcore API Call Examples (with Conceptual Dynamics Data Retrieval)</h2>
         <p>
-             The following examples show how to call the Netcore API in various languages. They now also include **conceptual code** for fetching data from Dynamics 365 using its Web API (OData) first.
+             The following examples show how to call the Netcore API in various languages. They now also include **conceptual code** for fetching data from Dynamics 365 using its Web API (OData) first. Remember that this Dynamics retrieval part requires **real authentication** (omitted below) and error handling.
         </p>
         <div class="important-note">
-             <strong>IMPORTANT:</strong> The Dynamics 365 data retrieval snippets below are **conceptual examples only**.
-             <ul>
-                <li>They **omit essential OAuth authentication headers**. You MUST implement proper authentication.</li>
-                <li>Replace ALL placeholders (Dynamics URL, entity names, field names, record IDs) with your actual values.</li>
-                <li>Implement robust error handling.</li>
-             </ul>
+             <strong>IMPORTANT Reminder:</strong> The Dynamics 365 data retrieval snippets within the tabs below are **conceptual examples only** and **omit essential OAuth authentication**. Replace placeholders and implement security best practices.
         </div>
 
         <div class="tabs">
@@ -94,110 +260,74 @@
                 <pre><code class="language-python">
 import requests
 import json
-import urllib.parse # Not used here, but often useful for query params
+import urllib.parse # Used for quoting in print statement
 
 # --- Netcore Configuration ---
-NETCORE_API_KEY = 'YOUR_NETCORE_API_KEY' # <<< REPLACE
-NETCORE_LIST_ID = 'YOUR_NETCORE_LIST_ID' # <<< REPLACE
+NETCORE_API_KEY = 'YOUR_NETCORE_API_KEY' # &lt;&lt;&lt; REPLACE
+NETCORE_LIST_ID = 'YOUR_NETCORE_LIST_ID' # &lt;&lt;&lt; REPLACE
 NETCORE_BASE_URL = 'https://api.netcoresmartech.com/apiv2'
 
 # --- Dynamics 365 Configuration (Conceptual) ---
-DYNAMICS_API_ENDPOINT = "https://yourorg.api.crm[X].dynamics.com/api/data/v9.2/" # <<< REPLACE
+DYNAMICS_API_ENDPOINT = "https://yourorg.api.crm[X].dynamics.com/api/data/v9.2/" # &lt;&lt;&lt; REPLACE
 ENTITY_PLURAL_NAME = "contacts" # Plural for OData query
-RECORD_ID = "YOUR_DYNAMICS_RECORD_ID_GUID" # <<< REPLACE (GUID of the record to fetch)
-# Use ACTUAL schema names from your Dynamics instance
-FIELDS_TO_SELECT = "$select=firstname,lastname,emailaddress1,mobilephone" # <<< REPLACE/VERIFY
+RECORD_ID = "YOUR_DYNAMICS_RECORD_ID_GUID" # &lt;&lt;&lt; REPLACE (GUID of the record to fetch)
+FIELDS_TO_SELECT = "$select=firstname,lastname,emailaddress1,mobilephone" # &lt;&lt;&lt; REPLACE/VERIFY
 
 # Initialize dictionary to hold data for Netcore
 contact_data_for_netcore = {}
 
 # --- Conceptual Dynamics 365 Data Retrieval ---
-print("--- Attempting Conceptual Dynamics Data Retrieval ---")
+print("--- Attempting Conceptual Dynamics Data Retrieval (Python Tab) ---")
 try:
     dynamics_fetch_url = f"{DYNAMICS_API_ENDPOINT}{ENTITY_PLURAL_NAME}({RECORD_ID})?{FIELDS_TO_SELECT}"
     print(f"Conceptual Dynamics Fetch URL: {dynamics_fetch_url}")
 
-    # !!! CRITICAL: AUTHENTICATION IS MISSING HERE !!!
-    # Real code requires an 'Authorization: Bearer <ACCESS_TOKEN>' header.
-    dynamics_headers = {
-        'Accept': 'application/json',
-        'OData-MaxVersion': '4.0',
-        'OData-Version': '4.0',
-        'Prefer': 'odata.include-annotations="*"', # Useful for getting formatted values
-        # 'Authorization': 'Bearer YOUR_ACCESS_TOKEN' # <<< REQUIRED BUT OMITTED
-    }
+    # !!! AUTHENTICATION OMITTED - Requires 'Authorization: Bearer &lt;TOKEN&gt;' header !!!
+    dynamics_headers_placeholder = {
+        'Accept': 'application/json', 'OData-MaxVersion': '4.0', 'OData-Version': '4.0',
+        'Prefer': 'odata.include-annotations="*"'}
 
     # --- SIMULATING API Call Success ---
-    # In real code:
-    # response = requests.get(dynamics_fetch_url, headers=dynamics_headers, timeout=30)
-    # response.raise_for_status() # Check for HTTP errors
-    # dynamics_data = response.json()
-    # print("--- Successfully fetched Dynamics Data (Simulated) ---")
-
-    # Using simulated data for demonstration:
+    # In real code: Add auth header, make request: requests.get(dynamics_fetch_url, headers=...)
     dynamics_data_simulated = {
-         "@odata.context": "...",
-         "firstname": "Mike (Read)",
-         "lastname": "Py-Dynamics",
-         "emailaddress1": "mike.read.py@example.com",
-         "mobilephone": "5551112222",
-         "contactid": RECORD_ID
-    }
+         "firstname": "Mike (Read)", "lastname": "Py-Dynamics",
+         "emailaddress1": "mike.read.py@example.com", "mobilephone": "5551112222"}
     dynamics_data = dynamics_data_simulated # Use simulated data
     print(f"Simulated Dynamics Response: {json.dumps(dynamics_data, indent=2)}")
 
     # --- Map Dynamics data to Netcore structure ---
     contact_data_for_netcore = {
-        "EMAIL": dynamics_data.get("emailaddress1"),
-        "MOBILE": dynamics_data.get("mobilephone"),
-        "FIRST_NAME": dynamics_data.get("firstname"),
-        "LAST_NAME": dynamics_data.get("lastname")
-        # Map other fields as needed
-    }
-    # Optional: Remove keys with None values
-    contact_data_for_netcore = {k: v for k, v in contact_data_for_netcore.items() if v is not None}
+        "EMAIL": dynamics_data.get("emailaddress1"), "MOBILE": dynamics_data.get("mobilephone"),
+        "FIRST_NAME": dynamics_data.get("firstname"), "LAST_NAME": dynamics_data.get("lastname") }
+    contact_data_for_netcore = {k: v for k, v in contact_data_for_netcore.items() if v is not None} # Filter nulls
     print(f"--- Mapped data for Netcore: {contact_data_for_netcore} ---")
 
-except Exception as e:
-     print(f"ERROR during conceptual Dynamics retrieval/mapping: {e}")
-     # Implement proper error handling (e.g., exit, log, skip)
+except Exception as e: print(f"ERROR during conceptual Dynamics retrieval/mapping: {e}")
 
 # --- Proceed only if email is present ---
-if not contact_data_for_netcore.get("EMAIL"):
-    print("ERROR: Cannot proceed without EMAIL retrieved from Dynamics.")
+if not contact_data_for_netcore.get("EMAIL"): print("ERROR: Cannot proceed without EMAIL.")
 else:
     print("\n--- Preparing Netcore API Call ---")
-    # --- Prepare Netcore Request ---
+    # --- Prepare & Send Netcore Request ---
     netcore_url = f"{NETCORE_BASE_URL}?type=contact&amp;activity=add&amp;apikey={NETCORE_API_KEY}&amp;listid={NETCORE_LIST_ID}"
     netcore_data_json = json.dumps(contact_data_for_netcore)
     netcore_payload = {'data': netcore_data_json}
     netcore_headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-
     print(f"Netcore URL: {netcore_url}")
-    print(f"Netcore Payload (url-encoded form data): data={urllib.parse.quote(netcore_data_json)}")
-
-    # --- Send Request To Netcore ---
+    print(f"Netcore Payload (url-encoded form): data={urllib.parse.quote(netcore_data_json)}")
     try:
         print("--- Sending Request to Netcore ---")
         response = requests.post(netcore_url, data=netcore_payload, headers=netcore_headers, timeout=30)
         response.raise_for_status()
-
         print(f"Netcore Status Code: {response.status_code}")
-        print("Netcore Response Body:")
-        try:
-            print(json.dumps(response.json(), indent=2))
-        except json.JSONDecodeError:
-            print(response.text) # Print as text if not JSON
-
+        print("Netcore Response Body:"); print(response.text) # Print raw text
     except requests.exceptions.RequestException as e:
         print(f"ERROR sending request to Netcore: {e}")
-        if e.response is not None:
-             print(f"Netcore Response Status: {e.response.status_code}")
-             print(f"Netcore Response Body: {e.response.text}")
+        # Add logging of e.response if available
 
                 </code></pre>
                 <p>
-                    This Python script now includes a **conceptual** block to fetch data from Dynamics 365 using its Web API (via `requests`) before preparing the Netcore request. **Crucially, authentication for Dynamics is omitted.** It simulates the response and maps the fields to the structure needed for Netcore. Replace ALL placeholders and implement real authentication and error handling. Note HTML escaping (&amp;amp;).
+                    This Python script shows fetching conceptual Dynamics data (auth omitted) and then calling Netcore. Replace placeholders and implement real authentication. Note HTML escaping (&amp;amp;).
                 </p>
             </div>
 
@@ -210,397 +340,271 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-// Needs a JSON processing library like Jackson or Gson for robust parsing
-// Example uses manual string parsing for simplicity - NOT recommended for production
-// Add dependencies: e.g., implementation 'com.fasterxml.jackson.core:jackson-databind:2.1x.x'
+// Needs a JSON library like Jackson/Gson for robust parsing
 
 public class NetcoreIntegrationWithDynamicsRead {
-
-    // --- Netcore Configuration ---
-    private static final String NETCORE_API_KEY = "YOUR_NETCORE_API_KEY"; // <<< REPLACE
-    private static final String NETCORE_LIST_ID = "YOUR_NETCORE_LIST_ID"; // <<< REPLACE
-    private static final String NETCORE_BASE_URL = "https://api.netcoresmartech.com/apiv2";
-
-    // --- Dynamics 365 Configuration (Conceptual) ---
-    private static final String DYNAMICS_API_ENDPOINT = "https://yourorg.api.crm[X].dynamics.com/api/data/v9.2/"; // <<< REPLACE
-    private static final String ENTITY_PLURAL_NAME = "contacts";
-    private static final String RECORD_ID = "YOUR_DYNAMICS_RECORD_ID_GUID"; // <<< REPLACE
-    private static final String FIELDS_TO_SELECT = "?$select=firstname,lastname,emailaddress1,mobilephone"; // <<< REPLACE/VERIFY
-
-    private static final HttpClient httpClient = HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_1_1)
-            .connectTimeout(Duration.ofSeconds(20))
-            .build();
+    // Config constants (Netcore & Dynamics - REPLACE PLACEHOLDERS)
+    private static final String NETCORE_API_KEY="YOUR_NETCORE_API_KEY"; private static final String NETCORE_LIST_ID="YOUR_NETCORE_LIST_ID"; private static final String NETCORE_BASE_URL="...";
+    private static final String DYNAMICS_API_ENDPOINT="https://yourorg.api.crm[X].dynamics.com/api/data/v9.2/"; private static final String ENTITY_PLURAL_NAME="contacts"; private static final String RECORD_ID="YOUR_DYNAMICS_RECORD_ID_GUID"; private static final String FIELDS_TO_SELECT="?$select=firstname,lastname,emailaddress1,mobilephone";
+    private static final HttpClient httpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(20)).build();
 
     public static void main(String[] args) {
         String netcoreJsonPayload = null;
-
-        // --- Conceptual Dynamics 365 Data Retrieval ---
-        System.out.println("--- Attempting Conceptual Dynamics Data Retrieval ---");
+        System.out.println("--- Attempting Conceptual Dynamics Data Retrieval (Java Tab) ---");
         try {
             String dynamicsFetchUrl = DYNAMICS_API_ENDPOINT + ENTITY_PLURAL_NAME + "(" + RECORD_ID + ")" + FIELDS_TO_SELECT;
             System.out.println("Conceptual Dynamics Fetch URL: " + dynamicsFetchUrl);
-
-            // !!! CRITICAL: AUTHENTICATION IS MISSING HERE !!!
-            // Real code requires an 'Authorization: Bearer <ACCESS_TOKEN>' header.
-            HttpRequest dynamicsRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(dynamicsFetchUrl))
-                    .header("Accept", "application/json")
-                    .header("OData-MaxVersion", "4.0")
-                    .header("OData-Version", "4.0")
-                    // .header("Authorization", "Bearer YOUR_ACCESS_TOKEN") // <<< REQUIRED BUT OMITTED
-                    .GET()
-                    .timeout(Duration.ofSeconds(30))
-                    .build();
+            // !!! AUTHENTICATION OMITTED - Requires 'Authorization: Bearer &lt;TOKEN&gt;' header !!!
+            HttpRequest dynamicsRequest = HttpRequest.newBuilder().uri(URI.create(dynamicsFetchUrl))
+                .header("Accept", "application/json").header("OData-MaxVersion", "4.0").header("OData-Version", "4.0")
+                // .header("Authorization", "Bearer YOUR_ACCESS_TOKEN") // <<< REQUIRED
+                .GET().timeout(Duration.ofSeconds(30)).build();
 
             // --- SIMULATING API Call Success & Parsing ---
-            // In real code:
-            // HttpResponse<String> dynamicsResponse = httpClient.send(dynamicsRequest, HttpResponse.BodyHandlers.ofString());
-            // if (dynamicsResponse.statusCode() >= 200 && dynamicsResponse.statusCode() < 300) {
-            //    String responseBody = dynamicsResponse.body();
-            //    System.out.println("--- Successfully fetched Dynamics Data (Simulated) ---");
-            //    System.out.println("Dynamics Response Body: " + responseBody);
-            //    // Use Jackson/Gson to parse responseBody into a Map or Object
-            //    // ObjectMapper mapper = new ObjectMapper();
-            //    // Map<String, Object> dynamicsData = mapper.readValue(responseBody, Map.class);
-            // } else {
-            //    throw new RuntimeException("Dynamics API call failed: " + dynamicsResponse.statusCode() + " Body: " + dynamicsResponse.body());
-            //}
-
-            // Using simulated data:
-             String simulatedResponseBody = """
-             {
-                 "@odata.context": "...",
-                 "firstname": "Mike (Read)",
-                 "lastname": "Java-Dynamics",
-                 "emailaddress1": "mike.read.java@example.com",
-                 "mobilephone": "5553334444",
-                 "contactid": "%s"
-             }
-             """.formatted(RECORD_ID); // Use simulated data
-             System.out.println("Simulated Dynamics Response: " + simulatedResponseBody);
+            // In real code: Use httpClient.send(dynamicsRequest, ...), check status, parse JSON with Jackson/Gson
+            String simulatedResponseBody = """
+             {"firstname":"Mike (Read)","lastname":"Java-Dynamics","emailaddress1":"mike.read.java@example.com","mobilephone":"5553334444"}""";
+            System.out.println("Simulated Dynamics Response: " + simulatedResponseBody);
 
             // --- Map Dynamics data (Conceptual Manual Parsing - Use JSON lib in reality!) ---
-            String email = extractJsonValue(simulatedResponseBody, "emailaddress1");
+            String email = extractJsonValue(simulatedResponseBody, "emailaddress1"); // Use helper from previous example or JSON lib
+            if (email == null || email.isBlank()) throw new RuntimeException("Email not found.");
             String mobile = extractJsonValue(simulatedResponseBody, "mobilephone");
             String firstName = extractJsonValue(simulatedResponseBody, "firstname");
             String lastName = extractJsonValue(simulatedResponseBody, "lastname");
-
-            if (email == null || email.isBlank()) {
-                 throw new RuntimeException("Email not found in Dynamics data.");
-            }
-
-            // Construct JSON payload string for Netcore
             netcoreJsonPayload = String.format("""
                     {"EMAIL":"%s","MOBILE":"%s","FIRST_NAME":"%s","LAST_NAME":"%s"}""",
-                    email, mobile != null ? mobile : "", firstName != null ? firstName : "", lastName != null ? lastName : "");
-
+                    email, mobile??"", firstName??"", lastName??""); // Handle nulls
             System.out.println("--- Mapped data for Netcore (JSON String): " + netcoreJsonPayload + " ---");
 
-        } catch (Exception e) {
-            System.err.println("ERROR during conceptual Dynamics retrieval/mapping: " + e.getMessage());
-            e.printStackTrace();
-            // Handle error
-        }
+        } catch (Exception e) { System.err.println("ERROR during conceptual Dynamics retrieval/mapping: " + e.getMessage()); e.printStackTrace(); }
 
         // --- Proceed only if payload was created ---
-        if (netcoreJsonPayload == null) {
-             System.err.println("ERROR: Cannot proceed. Failed to prepare Netcore payload.");
-        } else {
+        if (netcoreJsonPayload == null) { System.err.println("ERROR: Failed to prepare Netcore payload."); }
+        else {
             System.out.println("\n--- Preparing and Sending Netcore API Call ---");
             try {
-                // --- Prepare Netcore Request ---
-                String netcoreUrl = String.format("%s?type=contact&amp;activity=add&amp;apikey=%s&amp;listid=%s",
-                        NETCORE_BASE_URL, NETCORE_API_KEY, NETCORE_LIST_ID);
-
+                String netcoreUrl = String.format("%s?type=contact&amp;activity=add&amp;apikey=%s&amp;listid=%s", NETCORE_BASE_URL, NETCORE_API_KEY, NETCORE_LIST_ID);
                 String urlEncodedNetcoreData = URLEncoder.encode(netcoreJsonPayload, StandardCharsets.UTF_8);
                 String netcoreRequestBody = "data=" + urlEncodedNetcoreData;
                 System.out.println("Netcore URL: " + netcoreUrl);
-                System.out.println("Netcore Request Body (form-urlencoded): " + netcoreRequestBody);
-
-
-                HttpRequest netcoreRequest = HttpRequest.newBuilder()
-                        .uri(URI.create(netcoreUrl))
-                        .header("Content-Type", "application/x-www-form-urlencoded")
-                        .POST(HttpRequest.BodyPublishers.ofString(netcoreRequestBody))
-                        .timeout(Duration.ofSeconds(30))
-                        .build();
-
-                // --- Send Request To Netcore ---
+                System.out.println("Netcore Request Body: " + netcoreRequestBody);
+                HttpRequest netcoreRequest = HttpRequest.newBuilder().uri(URI.create(netcoreUrl))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(netcoreRequestBody)).timeout(Duration.ofSeconds(30)).build();
                 System.out.println("--- Sending Request to Netcore ---");
-                HttpResponse<String> netcoreResponse = httpClient.send(netcoreRequest, HttpResponse.BodyHandlers.ofString());
-
-                System.out.println("Netcore Status Code: " + netcoreResponse.statusCode());
-                System.out.println("Netcore Response Body: " + netcoreResponse.body());
-                if (netcoreResponse.statusCode() < 200 || netcoreResponse.statusCode() >= 300) {
-                     System.err.println("Netcore request failed!");
-                }
-
-            } catch (Exception e) {
-                System.err.println("ERROR sending request to Netcore: " + e.getMessage());
-                e.printStackTrace();
-            }
-        }
-    }
-
-     // Basic helper for conceptual parsing - DO NOT USE IN PRODUCTION (use a JSON library)
-     private static String extractJsonValue(String json, String key) {
-         String searchKey = "\"" + key + "\":";
-         int keyIndex = json.indexOf(searchKey);
-         if (keyIndex == -1) return null;
-         int valueStartIndex = keyIndex + searchKey.length();
-         // Find start of value (skip whitespace, check for quote)
-         while (valueStartIndex < json.length() && Character.isWhitespace(json.charAt(valueStartIndex))) { valueStartIndex++; }
-         if (valueStartIndex >= json.length()) return null;
-         char startChar = json.charAt(valueStartIndex);
-         if (startChar == '"') { // String value
-             valueStartIndex++; // Move past quote
-             int valueEndIndex = json.indexOf('"', valueStartIndex);
-             if (valueEndIndex == -1) return null; // Malformed
-             return json.substring(valueStartIndex, valueEndIndex);
-         } else if (startChar == 'n' && json.substring(valueStartIndex, valueStartIndex + 4).equals("null")) { // null value
-             return null;
-         } else { // Assume number or boolean (not handled robustly)
-             int valueEndIndex = valueStartIndex;
-             while (valueEndIndex < json.length() && json.charAt(valueEndIndex) != ',' && json.charAt(valueEndIndex) != '}') {
-                 valueEndIndex++;
-             }
-             return json.substring(valueStartIndex, valueEndIndex).trim();
-         }
-     }
+                HttpResponse&lt;String&gt; netcoreResponse = httpClient.send(netcoreRequest, HttpResponse.BodyHandlers.ofString());
+                System.out.println("Netcore Status Code: " + netcoreResponse.statusCode()); System.out.println("Netcore Response Body: " + netcoreResponse.body());
+                if (netcoreResponse.statusCode() &lt; 200 || netcoreResponse.statusCode() &gt;= 300) System.err.println("Netcore request failed!");
+            } catch (Exception e) { System.err.println("ERROR sending request to Netcore: " + e.getMessage()); e.printStackTrace(); }
+        } // End else
+    } // End main
+    // Include extractJsonValue helper or use a proper JSON library
+    private static String extractJsonValue(String json, String key){ /* ... basic parsing ... */ return "...";}
 }
                 </code></pre>
                 <p>
-                    This Java example includes a **conceptual** block using `java.net.http.HttpClient` to fetch Dynamics data. **Authentication is omitted.** It simulates the response and uses basic string manipulation (replace with a real JSON library like Jackson/Gson in production) to map fields before preparing the Netcore request. Replace placeholders, implement authentication/error handling. Note HTML escaping (&amp;lt;, &amp;gt;, &amp;amp;).
+                    This Java example shows fetching conceptual Dynamics data (auth omitted) and then calling Netcore. Replace placeholders, implement authentication/error handling, and use a proper JSON library. Note HTML escaping (&amp;lt;, &amp;gt;, &amp;amp;).
                 </p>
             </div>
 
             <div id="javascript-content" class="tab-pane">
                 <pre><code class="language-javascript">
-// This example uses Node.js with node-fetch (npm install node-fetch)
-// For built-in 'https', the structure is more complex.
-// import fetch from 'node-fetch'; // Use this syntax for ESM modules
-const fetch = require('node-fetch'); // Use this syntax for CommonJS
-const { URLSearchParams } = require('url'); // For Netcore payload
+// Node.js example using node-fetch (npm install node-fetch)
+const fetch = require('node-fetch'); // Or import fetch from 'node-fetch';
+const { URLSearchParams } = require('url');
 
-// --- Netcore Configuration ---
-const NETCORE_API_KEY = 'YOUR_NETCORE_API_KEY'; // <<< REPLACE
-const NETCORE_LIST_ID = 'YOUR_NETCORE_LIST_ID'; // <<< REPLACE
-const NETCORE_BASE_URL = 'https://api.netcoresmartech.com/apiv2';
+// Config constants (Netcore & Dynamics - REPLACE PLACEHOLDERS)
+const NETCORE_API_KEY="YOUR_NETCORE_API_KEY"; const NETCORE_LIST_ID="YOUR_NETCORE_LIST_ID"; const NETCORE_BASE_URL="...";
+const DYNAMICS_API_ENDPOINT="https://yourorg.api.crm[X].dynamics.com/api/data/v9.2/"; const ENTITY_PLURAL_NAME="contacts"; const RECORD_ID="YOUR_DYNAMICS_RECORD_ID_GUID"; const FIELDS_TO_SELECT="?$select=firstname,lastname,emailaddress1,mobilephone";
 
-// --- Dynamics 365 Configuration (Conceptual) ---
-const DYNAMICS_API_ENDPOINT = "https://yourorg.api.crm[X].dynamics.com/api/data/v9.2/"; // <<< REPLACE
-const ENTITY_PLURAL_NAME = "contacts";
-const RECORD_ID = "YOUR_DYNAMICS_RECORD_ID_GUID"; // <<< REPLACE
-const FIELDS_TO_SELECT = "?$select=firstname,lastname,emailaddress1,mobilephone"; // <<< REPLACE/VERIFY
-
-// --- Main async function to orchestrate ---
 async function syncContact() {
     let contactDataForNetcore = null;
-
-    // --- Conceptual Dynamics 365 Data Retrieval ---
-    console.log("--- Attempting Conceptual Dynamics Data Retrieval ---");
+    console.log("--- Attempting Conceptual Dynamics Data Retrieval (JS Tab) ---");
     try {
-        const dynamicsFetchUrl = `<span class="math-inline">\{DYNAMICS\_API\_ENDPOINT\}</span>{ENTITY_PLURAL_NAME}(<span class="math-inline">\{RECORD\_ID\}\)</span>{FIELDS_TO_SELECT}`;
+        const dynamicsFetchUrl = `${DYNAMICS_API_ENDPOINT}${ENTITY_PLURAL_NAME}(${RECORD_ID})${FIELDS_TO_SELECT}`;
         console.log(`Conceptual Dynamics Fetch URL: ${dynamicsFetchUrl}`);
-
-        // !!! CRITICAL: AUTHENTICATION IS MISSING HERE !!!
-        // Real code requires an 'Authorization: Bearer <ACCESS_TOKEN>' header.
-        const dynamicsHeaders = {
-            'Accept': 'application/json',
-            'OData-MaxVersion': '4.0',
-            'OData-Version': '4.0',
-            'Prefer': 'odata.include-annotations="*"',
-            // 'Authorization': 'Bearer YOUR_ACCESS_TOKEN' // <<< REQUIRED BUT OMITTED
-        };
+        // !!! AUTHENTICATION OMITTED - Requires 'Authorization: Bearer &lt;TOKEN&gt;' header !!!
+        const dynamicsHeaders = {'Accept':'application/json','OData-MaxVersion':'4.0','OData-Version':'4.0','Prefer':'odata.include-annotations="*"', /*'Authorization':'Bearer ...'*/};
 
         // --- SIMULATING API Call Success ---
-        // In real code:
-        // const response = await fetch(dynamicsFetchUrl, { method: 'GET', headers: dynamicsHeaders });
-        // if (!response.ok) {
-        //     throw new Error(`Dynamics API Error: ${response.status} ${response.statusText} - ${await response.text()}`);
-        // }
-        // const dynamicsData = await response.json();
-        // console.log("--- Successfully fetched Dynamics Data (Simulated) ---");
-
-        // Using simulated data:
-         const dynamicsDataSimulated = {
-             "@odata.context": "...",
-             "firstname": "Mike (Read)",
-             "lastname": "JS-Dynamics",
-             "emailaddress1": "mike.read.js@example.com",
-             "mobilephone": "5555556666",
-             "contactid": RECORD_ID
-        };
+        // In real code: const response = await fetch(dynamicsFetchUrl, { headers: dynamicsHeaders }); if (!response.ok) throw Error(...); const dynamicsData = await response.json();
+         const dynamicsDataSimulated = {"firstname":"Mike (Read)","lastname":"JS-Dynamics","emailaddress1":"mike.read.js@example.com","mobilephone":"5555556666"};
         const dynamicsData = dynamicsDataSimulated; // Use simulated data
         console.log(`Simulated Dynamics Response: ${JSON.stringify(dynamicsData, null, 2)}`);
 
-
         // --- Map Dynamics data to Netcore structure ---
-        contactDataForNetcore = {
-            EMAIL: dynamicsData?.emailaddress1, // Optional chaining for safety
-            MOBILE: dynamicsData?.mobilephone,
-            FIRST_NAME: dynamicsData?.firstname,
-            LAST_NAME: dynamicsData?.lastname
-            // Map other fields
-        };
-        // Optional: Filter out undefined/null values
-        contactDataForNetcore = Object.entries(contactDataForNetcore)
-            .filter(([_, v]) => v != null)
-            .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {});
-
+        contactDataForNetcore = { EMAIL: dynamicsData?.emailaddress1, MOBILE: dynamicsData?.mobilephone, FIRST_NAME: dynamicsData?.firstname, LAST_NAME: dynamicsData?.lastname };
+        contactDataForNetcore = Object.fromEntries(Object.entries(contactDataForNetcore).filter(([_, v]) => v != null)); // Filter null/undefined
         console.log(`--- Mapped data for Netcore: ${JSON.stringify(contactDataForNetcore)} ---`);
 
-    } catch (error) {
-        console.error(`ERROR during conceptual Dynamics retrieval/mapping: ${error.message}`);
-        // Handle error appropriately
-    }
+    } catch (error) { console.error(`ERROR during conceptual Dynamics retrieval/mapping: ${error.message}`); }
 
-
-    // --- Proceed only if email is present ---
-     if (!contactDataForNetcore?.EMAIL) {
-         console.error("ERROR: Cannot proceed without EMAIL retrieved from Dynamics.");
-         return; // Exit function
-     }
+    if (!contactDataForNetcore?.EMAIL) { console.error("ERROR: Cannot proceed without EMAIL."); return; }
 
     console.log("\n--- Preparing and Sending Netcore API Call ---");
     try {
-        // --- Prepare Netcore Request ---
-        const netcoreUrl = `<span class="math-inline">\{NETCORE\_BASE\_URL\}?type\=contact&amp;activity\=add&amp;apikey\=</span>{NETCORE_API_KEY}&amp;listid=${NETCORE_LIST_ID}`;
+        const netcoreUrl = `${NETCORE_BASE_URL}?type=contact&amp;activity=add&amp;apikey=${NETCORE_API_KEY}&amp;listid=${NETCORE_LIST_ID}`;
         const netcoreDataJson = JSON.stringify(contactDataForNetcore);
-
-        const netcoreBody = new URLSearchParams(); // Handles form-urlencoded
-        netcoreBody.append('data', netcoreDataJson);
-
-        const netcoreHeaders = {
-            // 'Content-Type' is often set automatically by fetch with URLSearchParams
-            // 'Content-Type': 'application/x-www-form-urlencoded'
-        };
+        const netcoreBody = new URLSearchParams(); netcoreBody.append('data', netcoreDataJson);
         console.log(`Netcore URL: ${netcoreUrl}`);
         console.log(`Netcore Payload (URLSearchParams): data=${encodeURIComponent(netcoreDataJson)}`);
-
-
-        // --- Send Request To Netcore ---
         console.log("--- Sending Request to Netcore ---");
-        const netcoreResponse = await fetch(netcoreUrl, {
-            method: 'POST',
-            headers: netcoreHeaders,
-            body: netcoreBody
-        });
-
-        const responseText = await netcoreResponse.text(); // Get text first
+        const netcoreResponse = await fetch(netcoreUrl, { method: 'POST', body: netcoreBody /* headers optional */ });
+        const responseText = await netcoreResponse.text();
         console.log(`Netcore Status Code: ${netcoreResponse.status} ${netcoreResponse.statusText}`);
-        console.log("Netcore Response Body:");
-        try {
-             // Try to parse as JSON for pretty printing
-             console.log(JSON.stringify(JSON.parse(responseText), null, 2));
-        } catch(e) {
-             console.log(responseText); // Print raw text if not JSON
-        }
+        console.log("Netcore Response Body:", responseText);
+        if (!netcoreResponse.ok) console.error("Netcore request failed!");
+    } catch (error) { console.error(`ERROR sending request to Netcore: ${error.message}`); }
+} // End syncContact
 
-        if (!netcoreResponse.ok) {
-            console.error("Netcore request failed!");
-            // Potentially throw error here depending on required logic
-        }
-
-    } catch (error) {
-        console.error(`ERROR sending request to Netcore: ${error.message}`);
-    }
-}
-
-// --- Execute the main function ---
-syncContact().catch(e => console.error("Unhandled error in syncContact:", e));
-
+syncContact().catch(e => console.error("Unhandled error:", e));
                 </code></pre>
                  <p>
-                    This Node.js example uses `node-fetch` to **conceptually** fetch Dynamics data (requires `npm install node-fetch`). **Authentication is omitted.** It simulates the response, maps fields, and then uses `URLSearchParams` to prepare the form-encoded payload for the Netcore request. Replace placeholders, implement authentication/error handling. Note HTML escaping (&amp;amp;). <br><strong>Security Note:</strong> Avoid exposing API keys in client-side browser JS.
+                    This Node.js example uses `node-fetch` for conceptual Dynamics retrieval (auth omitted) and the Netcore POST. Replace placeholders, implement authentication/error handling. Note HTML escaping (&amp;amp;).
                 </p>
             </div>
 
             <div id="csharp-content" class="tab-pane">
                  <pre><code class="language-csharp">
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Headers; // For AuthenticationHeaderValue
-using System.Text.Json;
-using System.Threading.Tasks;
+using System; using System.Collections.Generic; using System.Net.Http; using System.Net.Http.Headers; using System.Text.Json; using System.Threading.Tasks;
 
-public class NetcoreApiClientWithDynamicsRead
-{
-    // --- Netcore Configuration ---
-    private static readonly string NetcoreApiKey = "YOUR_NETCORE_API_KEY"; // <<< REPLACE
-    private static readonly string NetcoreListId = "YOUR_NETCORE_LIST_ID"; // <<< REPLACE
-    private static readonly string NetcoreApiUrl = "https://api.netcoresmartech.com/apiv2";
-
-    // --- Dynamics 365 Configuration (Conceptual) ---
-    private static readonly string DynamicsApiEndpoint = "https://yourorg.api.crm[X].dynamics.com/api/data/v9.2/"; // <<< REPLACE
-    private static readonly string EntityPluralName = "contacts";
-    private static readonly string RecordId = "YOUR_DYNAMICS_RECORD_ID_GUID"; // <<< REPLACE
-    private static readonly string FieldsToSelect = "?$select=firstname,lastname,emailaddress1,mobilephone"; // <<< REPLACE/VERIFY
-
-    // Use a static HttpClient instance
+public class NetcoreApiClientWithDynamicsRead {
+    // Config constants (Netcore & Dynamics - REPLACE PLACEHOLDERS)
+    private static readonly string NetcoreApiKey="YOUR_NETCORE_API_KEY"; private static readonly string NetcoreListId="YOUR_NETCORE_LIST_ID"; private static readonly string NetcoreApiUrl="...";
+    private static readonly string DynamicsApiEndpoint="..."; private static readonly string EntityPluralName="contacts"; private static readonly string RecordId="..."; private static readonly string FieldsToSelect="...";
     private static readonly HttpClient httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
 
-    public static async Task SyncContactStandalone()
-    {
+    public static async Task SyncContactStandalone() {
         Dictionary&lt;string, string&gt; contactDataForNetcore = null;
-
-        // --- Conceptual Dynamics 365 Data Retrieval ---
-        Console.WriteLine("--- Attempting Conceptual Dynamics Data Retrieval ---");
-        try
-        {
-            string dynamicsFetchUrl = <span class="math-inline">"\{DynamicsApiEndpoint\}\{EntityPluralName\}\(\{RecordId\}\)\{FieldsToSelect\}";
-Console\.WriteLine\(</span>"Conceptual Dynamics Fetch URL: {dynamicsFetchUrl}");
-
-            // !!! CRITICAL: AUTHENTICATION IS MISSING HERE !!!
-            // Real code requires obtaining an access token and adding it.
+        Console.WriteLine("--- Attempting Conceptual Dynamics Data Retrieval (C# Tab) ---");
+        try {
+            string dynamicsFetchUrl = $"{DynamicsApiEndpoint}{EntityPluralName}({RecordId}){FieldsToSelect}";
+            Console.WriteLine($"Conceptual Dynamics Fetch URL: {dynamicsFetchUrl}");
+            // !!! AUTHENTICATION OMITTED - Requires Authorization header !!!
             var dynamicsRequest = new HttpRequestMessage(HttpMethod.Get, dynamicsFetchUrl);
-            dynamicsRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            dynamicsRequest.Headers.Add("OData-MaxVersion", "4.0");
-            dynamicsRequest.Headers.Add("OData-Version", "4.0");
-            dynamicsRequest.Headers.Add("Prefer", "odata.include-annotations=\"*\"");
-            // dynamicsRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "YOUR_ACCESS_TOKEN"); // <<< REQUIRED BUT OMITTED
+            dynamicsRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json")); /* ... Other OData headers ... */
+            // dynamicsRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "YOUR_TOKEN"); // <<< REQUIRED
 
             // --- SIMULATING API Call Success ---
-            // In real code:
-            // HttpResponseMessage dynamicsResponse = await httpClient.SendAsync(dynamicsRequest);
-            // dynamicsResponse.EnsureSuccessStatusCode(); // Throw on HTTP error
-            // string responseJson = await dynamicsResponse.Content.ReadAsStringAsync();
-            // Console.WriteLine("--- Successfully fetched Dynamics Data (Simulated) ---");
-            // Console.WriteLine($"Dynamics Response JSON: {responseJson}");
-            // using JsonDocument document = JsonDocument.Parse(responseJson);
-            // JsonElement root = document.RootElement;
-
-            // Using simulated data:
-            string simulatedResponseJson = <span class="math-inline">@"\{\{
-""@odata\.context""\: ""\.\.\."",
-""firstname""\: ""Mike \(Read\)"",
-""lastname""\: ""CS\-Dynamics"",
-""emailaddress1""\: ""mike\.read\.cs@example\.com"",
-""mobilephone""\: ""5557778888"",
-""contactid""\: ""\{RecordId\}""
-\}\}";
-Console\.WriteLine\(</span>"Simulated Dynamics Response: {simulatedResponseJson}");
-             using JsonDocument document = JsonDocument.Parse(simulatedResponseJson);
-             JsonElement root = document.RootElement;
+            // In real code: HttpResponseMessage dynamicsResponse = await httpClient.SendAsync(dynamicsRequest); dynamicsResponse.EnsureSuccessStatusCode(); string json = await dynamicsResponse.Content.ReadAsStringAsync(); ... parse json ...
+            string simulatedResponseJson = $@"{{""firstname"":""Mike (Read)"",""lastname"":""CS-Dynamics"",""emailaddress1"":""mike.read.cs@example.com"",""mobilephone"":""5557778888""}}";
+            Console.WriteLine($"Simulated Dynamics Response: {simulatedResponseJson}");
+            using JsonDocument document = JsonDocument.Parse(simulatedResponseJson); JsonElement root = document.RootElement;
 
              // --- Map Dynamics data to Netcore structure ---
             contactDataForNetcore = new Dictionary&lt;string, string&gt;();
-            if (root.TryGetProperty("emailaddress1", out JsonElement emailEl) &amp;&amp; emailEl.ValueKind == JsonValueKind.String)
-                contactDataForNetcore["EMAIL"] = emailEl.GetString();
-            if (root.TryGetProperty("mobilephone", out JsonElement mobileEl) &amp;&amp; mobileEl.ValueKind == JsonValueKind.String)
-                contactDataForNetcore["MOBILE"] = mobileEl.GetString();
-            if (root.TryGetProperty("firstname", out JsonElement fnEl) &amp;&amp; fnEl.ValueKind == JsonValueKind.String)
-                contactDataForNetcore["FIRST_NAME"] = fnEl.GetString();
-            if (root.TryGetProperty("lastname", out JsonElement lnEl) &amp;&amp; lnEl.ValueKind == JsonValueKind.String)
-                contactDataForNetcore["LAST_NAME"] = lnEl.GetString();
-            // Map other fields...
+            if (root.TryGetProperty("emailaddress1", out var e) &amp;&amp; e.ValueKind == JsonValueKind.String) contactDataForNetcore["EMAIL"] = e.GetString();
+            if (root.TryGetProperty("mobilephone", out var m) &amp;&amp; m.ValueKind == JsonValueKind.String) contactDataForNetcore["MOBILE"] = m.GetString();
+            if (root.TryGetProperty("firstname", out var f) &amp;&amp; f.ValueKind == JsonValueKind.String) contactDataForNetcore["FIRST_NAME"] = f.GetString();
+            if (root.TryGetProperty("lastname", out var l) &amp;&amp; l.ValueKind == JsonValueKind.String) contactDataForNetcore["LAST_NAME"] = l.GetString();
+            Console.WriteLine($"--- Mapped data for Netcore: {JsonSerializer.Serialize(contactDataForNetcore)} ---");
 
-            Console.WriteLine(<span class="math-inline">"\-\-\- Mapped data for Netcore\: \{JsonSerializer\.Serialize\(contactDataForNetcore\)\} \-\-\-"\);
-\}
-catch \(Exception ex\)
-\{
-Console\.Error\.WriteLine\(</span>"ERROR during conceptual Dynamics retrieval/mapping: {ex.Message}");
-            // Handle error
-        }
+        } catch (Exception ex) { Console.Error.WriteLine($"ERROR during conceptual Dynamics retrieval/mapping: {ex.Message}"); }
+
+        if (string.IsNullOrEmpty(contactDataForNetcore?.GetValueOrDefault("EMAIL"))) { Console.Error.WriteLine("ERROR: Cannot proceed without EMAIL."); return; }
+
+        Console.WriteLine("\n--- Preparing and Sending Netcore API Call ---");
+        try {
+            string netcoreRequestUrl = $"{NetcoreApiUrl}?type=contact&amp;activity=add&amp;apikey={NetcoreApiKey}&amp;listid={NetcoreListId}";
+            string dataJsonString = JsonSerializer.Serialize(contactDataForNetcore);
+            var formContent = new FormUrlEncodedContent(new[] { new KeyValuePair&lt;string, string&gt;("data", dataJsonString) });
+            Console.WriteLine($"Netcore URL: {netcoreRequestUrl}"); Console.WriteLine($"Netcore Payload (Form Data): data={dataJsonString}");
+            Console.WriteLine("--- Sending Request to Netcore ---");
+            HttpResponseMessage netcoreResponse = await httpClient.PostAsync(netcoreRequestUrl, formContent);
+            string netcoreResponseBody = await netcoreResponse.Content.ReadAsStringAsync();
+            Console.WriteLine($"Netcore Status: {(int)netcoreResponse.StatusCode}"); Console.WriteLine($"Netcore Response: {netcoreResponseBody}");
+            netcoreResponse.EnsureSuccessStatusCode();
+        } catch (Exception ex) { Console.Error.WriteLine($"ERROR sending request to Netcore: {ex.Message}"); }
+    }
+    // Call it: await SyncContactStandalone();
+}
+                </code></pre>
+                 <p>
+                    This C# example uses `HttpClient` for conceptual Dynamics retrieval (auth omitted) and the Netcore POST. Replace placeholders, implement authentication/error handling. Note HTML escaping (&amp;lt;, &amp;gt;, &amp;amp;).
+                </p>
+            </div>
+
+            <div id="php-content" class="tab-pane">
+                 <pre><code class="language-php">
+&lt;?php // error_reporting(E_ALL); ini_set('display_errors', 1);
+
+// Config constants (Netcore & Dynamics - REPLACE PLACEHOLDERS)
+$netcoreApiKey="YOUR_NETCORE_API_KEY"; $netcoreListId="YOUR_NETCORE_LIST_ID"; $netcoreBaseUrl="...";
+$dynamicsApiEndpoint="..."; $entityPluralName="contacts"; $recordId="..."; $fieldsToSelect="...";
+
+$contactDataForNetcore = null;
+
+echo "--- Attempting Conceptual Dynamics Data Retrieval (PHP Tab) ---\n";
+try {
+    $dynamicsFetchUrl = $dynamicsApiEndpoint . $entityPluralName . "(" . $recordId . ")" . $fieldsToSelect;
+    echo "Conceptual Dynamics Fetch URL: " . htmlspecialchars($dynamicsFetchUrl) . "\n";
+    // !!! AUTHENTICATION OMITTED - Requires 'Authorization: Bearer &lt;TOKEN&gt;' header !!!
+    $dynamicsHeaders = ['Accept: application/json', 'OData-MaxVersion: 4.0', 'OData-Version: 4.0', /* 'Authorization: Bearer ...' */ ];
+
+    // --- SIMULATING API Call Success ---
+    // In real code: Use curl to make GET request with $dynamicsHeaders, check status, $dynamicsData = json_decode(curl_exec(...), true);
+     $simulatedResponseBody = '{"firstname":"Mike (Read)","lastname":"PHP-Dynamics","emailaddress1":"mike.read.php@example.com","mobilephone":"5559990000"}';
+     echo "Simulated Dynamics Response: " . htmlspecialchars($simulatedResponseBody) . "\n";
+     $dynamicsData = json_decode($simulatedResponseBody, true);
+     if (json_last_error() !== JSON_ERROR_NONE) { throw new Exception("Simulated JSON Decode Error: " . json_last_error_msg()); }
+
+     // --- Map Dynamics data to Netcore structure ---
+     $contactDataForNetcore = [];
+     $contactDataForNetcore["EMAIL"] = $dynamicsData['emailaddress1'] ?? null;
+     $contactDataForNetcore["MOBILE"] = $dynamicsData['mobilephone'] ?? null;
+     $contactDataForNetcore["FIRST_NAME"] = $dynamicsData['firstname'] ?? null;
+     $contactDataForNetcore["LAST_NAME"] = $dynamicsData['lastname'] ?? null;
+     $contactDataForNetcore = array_filter($contactDataForNetcore, fn($v) => $v !== null); // Filter nulls (PHP 7.4+)
+     echo "--- Mapped data for Netcore: " . htmlspecialchars(json_encode($contactDataForNetcore)) . " ---\n";
+
+} catch (Exception $e) { echo "ERROR during conceptual Dynamics retrieval/mapping: " . htmlspecialchars($e->getMessage()) . "\n"; }
+
+if (empty($contactDataForNetcore['EMAIL'])) { echo "ERROR: Cannot proceed without EMAIL.\n"; }
+else {
+    echo "\n--- Preparing and Sending Netcore API Call ---\n";
+    try {
+        $netcoreQueryData = ['type'=>'contact','activity'=>'add','apikey'=>$netcoreApiKey,'listid'=>$netcoreListId];
+        $netcoreUrl = $netcoreBaseUrl . '?' . http_build_query($netcoreQueryData);
+        $netcoreDataJson = json_encode($contactDataForNetcore);
+        if ($netcoreDataJson === false) throw new Exception("Netcore JSON Encode Error");
+        $netcorePostData = ['data' => $netcoreDataJson];
+        $netcorePostBody = http_build_query($netcorePostData);
+        echo "Netcore URL: " . htmlspecialchars($netcoreUrl) . "\n"; echo "Netcore POST Body: " . htmlspecialchars($netcorePostBody) . "\n";
+        echo "--- Sending Request to Netcore ---\n";
+        $ch_netcore = curl_init(); /* ... set curl options for POST ... */
+        curl_setopt($ch_netcore, CURLOPT_URL, $netcoreUrl); curl_setopt($ch_netcore, CURLOPT_POST, true); curl_setopt($ch_netcore, CURLOPT_POSTFIELDS, $netcorePostBody); curl_setopt($ch_netcore, CURLOPT_RETURNTRANSFER, true); curl_setopt($ch_netcore, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']); curl_setopt($ch_netcore, CURLOPT_TIMEOUT, 30);
+        $netcoreResponse = curl_exec($ch_netcore); $netcoreHttpStatusCode = curl_getinfo($ch_netcore, CURLINFO_HTTP_CODE); $netcoreCurlError = curl_error($ch_netcore); curl_close($ch_netcore);
+        echo "Netcore Status Code: " . htmlspecialchars($netcoreHttpStatusCode) . "\n";
+        if ($netcoreCurlError) { echo "Netcore cURL Error: " . htmlspecialchars($netcoreCurlError) . "\n"; }
+        else { echo "Netcore Response Body:\n" . htmlspecialchars($netcoreResponse) . "\n"; if ($netcoreHttpStatusCode < 200 || $netcoreHttpStatusCode >= 300) echo "Netcore request failed!\n"; }
+    } catch (Exception $e) { echo "ERROR sending request to Netcore: " . htmlspecialchars($e->getMessage()) . "\n"; }
+} // End if email exists
+?&gt;
+                 </code></pre>
+                 <p>
+                    This PHP example shows conceptual Dynamics retrieval using cURL (auth omitted) and then calling Netcore. Replace placeholders, implement authentication/error handling. Note HTML escaping (&amp;lt;, &amp;gt;, \$).
+                </p>
+            </div>
+
+        </div></div><script>
+        // JavaScript for tabs
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.tab-button');
+            const panes = document.querySelectorAll('.tab-pane');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetId = tab.getAttribute('data-target');
+                    tabs.forEach(t => t.classList.remove('active'));
+                    panes.forEach(p => p.classList.remove('active'));
+                    tab.classList.add('active');
+                    const targetPane = document.querySelector(targetId);
+                    if (targetPane) { targetPane.classList.add('active'); }
+                    else { console.error("Target pane not found:", targetId); }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
