@@ -588,23 +588,60 @@ else {
             </div>
 
         </div></div><script>
-        // JavaScript for tabs
-        document.addEventListener('DOMContentLoaded', function() {
-            const tabs = document.querySelectorAll('.tab-button');
-            const panes = document.querySelectorAll('.tab-pane');
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const targetId = tab.getAttribute('data-target');
-                    tabs.forEach(t => t.classList.remove('active'));
-                    panes.forEach(p => p.classList.remove('active'));
-                    tab.classList.add('active');
-                    const targetPane = document.querySelector(targetId);
-                    if (targetPane) { targetPane.classList.add('active'); }
-                    else { console.error("Target pane not found:", targetId); }
-                });
+    // JavaScript for tabs
+    document.addEventListener('DOMContentLoaded', function() {
+        // Select all tab buttons and content panes
+        const tabs = document.querySelectorAll('.tab-button');
+        const panes = document.querySelectorAll('.tab-pane');
+
+        // Add click event listener to each tab button
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Get the target pane's ID selector (e.g., "#python-content")
+                const targetId = tab.getAttribute('data-target');
+                // Log which tab was clicked for debugging
+                console.log('Tab clicked, target:', targetId);
+
+                // Deactivate all tabs and panes first
+                tabs.forEach(t => t.classList.remove('active'));
+                panes.forEach(p => p.classList.remove('active'));
+
+                // Activate the clicked tab button
+                tab.classList.add('active');
+
+                // Find the corresponding content pane using the target ID
+                const targetPane = document.querySelector(targetId);
+
+                // Activate the target content pane if found
+                if (targetPane) {
+                    targetPane.classList.add('active');
+                    console.log('Activated pane:', targetId);
+                } else {
+                    // Log an error if the pane wasn't found (check IDs and data-target values)
+                    console.error("Target pane not found for selector:", targetId);
+                }
             });
         });
-    </script>
+
+        // Optional: Log to confirm the script ran and found elements
+        console.log(`Tab script loaded. Found ${tabs.length} tabs and ${panes.length} panes.`);
+
+        // Ensure the initially active tab's content is displayed
+        // (This should be handled by default classes in HTML and CSS, but good to be aware)
+        const initialActiveTab = document.querySelector('.tab-button.active');
+        const initialActivePane = document.querySelector('.tab-pane.active');
+        if (!initialActiveTab || !initialActivePane) {
+            console.warn("Initial active tab or pane not found or set correctly in HTML.");
+            // Optionally, force the first tab/pane to be active if none are set
+            // if (tabs.length > 0 && panes.length > 0) {
+            //    tabs[0].classList.add('active');
+            //    const firstTargetId = tabs[0].getAttribute('data-target');
+            //    const firstPane = document.querySelector(firstTargetId);
+            //    if (firstPane) firstPane.classList.add('active');
+            // }
+        }
+    });
+</script>
 
 </body>
 </html>
