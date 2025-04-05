@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dynamics 365 to Netcore Integration (Single File)</title>
     <style>
-        /* General Styling */
+        /* General Styling (Same as before) */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6;
@@ -14,7 +14,6 @@
             background-color: #f4f7f9;
             color: #333;
         }
-
         .container {
             max-width: 900px;
             margin: 30px auto;
@@ -23,118 +22,51 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-
-        h1, h2 {
+        h1, h2, h3 {
             color: #2c3e50;
             border-bottom: 2px solid #e0e0e0;
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
-
-        h1 {
-            font-size: 2em;
-        }
-
-        h2 {
-            font-size: 1.5em;
-            margin-top: 30px;
-        }
-
-        p {
-            margin-bottom: 15px;
-        }
-
+        h1 { font-size: 2em; }
+        h2 { font-size: 1.5em; margin-top: 30px; }
+        h3 { font-size: 1.2em; margin-top: 25px; border-bottom-style: dashed; border-bottom-width: 1px; }
+        p { margin-bottom: 15px; }
         code {
             font-family: "Consolas", "Monaco", "Courier New", monospace;
             background-color: #eef1f3;
             padding: 2px 6px;
             border-radius: 4px;
             font-size: 0.9em;
-            color: #c7254e; /* Changed color for inline code */
+            color: #c7254e;
+        }
+        .important-note {
+            background-color: #fffbe6;
+            border: 1px solid #ffe58f;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .important-note strong {
+            color: #d46b08;
         }
 
-        /* Tab Styling */
-        .tabs {
-            margin-bottom: 0; /* Remove bottom margin as border is now on content */
-            border-bottom: 1px solid #d4dadf;
-            padding-bottom: -1px; /* Overlap border slightly */
-        }
+        /* Tab Styling (Same as before) */
+        .tabs { margin-bottom: 0; border-bottom: 1px solid #d4dadf; padding-bottom: -1px; }
+        .tab-button { padding: 10px 20px; cursor: pointer; border: 1px solid transparent; border-bottom: none; background-color: #f4f7f9; margin-right: 5px; border-radius: 5px 5px 0 0; font-size: 1em; position: relative; bottom: -1px; transition: background-color 0.3s ease, border-color 0.3s ease; }
+        .tab-button:hover { background-color: #e9edf1; }
+        .tab-button.active { background-color: #ffffff; border-color: #d4dadf; border-bottom: 1px solid #ffffff; font-weight: bold; color: #3498db; }
 
-        .tab-button {
-            padding: 10px 20px;
-            cursor: pointer;
-            border: 1px solid transparent;
-            border-bottom: none;
-            background-color: #f4f7f9;
-            margin-right: 5px;
-            border-radius: 5px 5px 0 0;
-            font-size: 1em;
-            position: relative;
-            bottom: -1px; /* Align with container border */
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
+        /* Tab Content Area Styling (Same as before) */
+        .tab-content-wrapper { padding: 20px; border: 1px solid #d4dadf; border-top: none; background-color: #ffffff; border-radius: 0 0 8px 8px; min-height: 200px; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
 
-        .tab-button:hover {
-            background-color: #e9edf1;
-        }
-
-        .tab-button.active {
-            background-color: #ffffff;
-            border-color: #d4dadf;
-            border-bottom: 1px solid #ffffff; /* Cover the container border */
-            font-weight: bold;
-            color: #3498db;
-        }
-
-        /* Tab Content Area Styling */
-        .tab-content-wrapper {
-            padding: 20px;
-            border: 1px solid #d4dadf;
-            border-top: none; /* Top border is handled by the tabs container */
-            background-color: #ffffff;
-            border-radius: 0 0 8px 8px; /* Match container bottom radius */
-            min-height: 200px;
-        }
-
-        /* Individual Content Panes */
-        .tab-pane {
-            display: none; /* Hide all panes by default */
-        }
-
-        .tab-pane.active {
-            display: block; /* Show the active pane */
-        }
-
-
-        /* Code Block Styling */
-        pre {
-            background-color: #2d2d2d; /* Dark background */
-            color: #cccccc; /* Light text */
-            padding: 20px;
-            border-radius: 6px;
-            overflow-x: auto; /* Allow horizontal scrolling for long lines */
-            font-family: "Consolas", "Monaco", "Courier New", monospace;
-            font-size: 0.9em;
-            line-height: 1.5;
-            margin-top: 15px;
-            margin-bottom: 15px;
-        }
-
-        pre code {
-            background-color: transparent; /* Remove inner code background */
-            padding: 0;
-            color: inherit; /* Inherit color from pre */
-            font-size: inherit; /* Inherit size from pre */
-            border-radius: 0;
-        }
-
-        /* Explanation Text below code */
-        .tab-pane p {
-            margin-top: 15px;
-            margin-bottom: 10px;
-            font-style: italic;
-            color: #555;
-        }
+        /* Code Block Styling (Same as before) */
+        pre { background-color: #2d2d2d; color: #cccccc; padding: 20px; border-radius: 6px; overflow-x: auto; font-family: "Consolas", "Monaco", "Courier New", monospace; font-size: 0.9em; line-height: 1.5; margin-top: 15px; margin-bottom: 15px; }
+        pre code { background-color: transparent; padding: 0; color: inherit; font-size: inherit; border-radius: 0; }
+        .tab-pane p, .dynamics-section p { margin-top: 15px; margin-bottom: 10px; font-style: italic; color: #555; }
+        .dynamics-section p { font-style: normal; } /* Override italic for dynamics explanation */
     </style>
 </head>
 <body>
@@ -162,13 +94,182 @@
             <br>(Note: The entire value for 'data' must be URL-encoded when sent).
         </p>
 
-        <h2>Code Examples</h2>
+        <div class="dynamics-section">
+            <h2>Dynamics 365 Implementation Approaches</h2>
+            <p>
+                To initiate the call to Netcore, you first need to configure or develop logic within Dynamics 365. This logic will trigger when a relevant event occurs (like creating/updating a Contact), retrieve the necessary data from the Dynamics record, and then make the HTTP request to Netcore's API.
+            </p>
+            <p>Common methods include:</p>
+            <ul>
+                <li><strong>Power Automate (Flow):</strong> [Recommended for Cloud] A low-code approach using the Dataverse connector trigger ("When a row is added, modified...") and the built-in HTTP action to call the Netcore API. Easier to build, manage, and deploy for many scenarios.</li>
+                <li><strong>C# Plugin:</strong> Custom code offering maximum flexibility. Requires .NET development, compiling, signing, and registering the plugin assembly using the Plugin Registration Tool.</li>
+                <li><strong>C# Custom Workflow Activity:</strong> Similar to a plugin but designed for use within the traditional Dynamics workflow engine.</li>
+            </ul>
+
+            <h3>Conceptual C# Plugin Example</h3>
+            <p>
+                Below is a conceptual example of a C# Plugin that triggers on the Create/Update of a 'contact' record. It retrieves contact details and calls the Netcore API.
+            </p>
+            <div class="important-note">
+                <strong>Disclaimer:</strong> This is a conceptual example. You MUST adapt it for your specific Dynamics 365 environment.
+                <ul>
+                    <li>Replace placeholder values (API Key, List ID, Entity Name, Field Schema Names).</li>
+                    <li>Implement secure storage for secrets (API Key/List ID) - do NOT hardcode them in production. Use Secure Configuration or Azure Key Vault.</li>
+                    <li>Add robust error handling, logging, and potentially retry logic.</li>
+                    <li>Test thoroughly, especially the synchronous call to the async method, in your specific Dynamics version and configuration (Online/On-Premises).</li>
+                    <li>Understand the Plugin execution pipeline, context, and deployment process.</li>
+                </ul>
+            </div>
+            <pre><code class="language-csharp">
+// --- Conceptual C# Code for a Dynamics 365 Plugin ---
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Text.Json; // Requires reference or compatible .NET version
+using System.Threading.Tasks;
+using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query; // For ColumnSet
+
+// Register this plugin on Create/Update messages for 'contact' entity
+public class NetcoreSyncPlugin : IPlugin
+{
+    // TODO: Securely store API Key and List ID (e.g., using Secure Configuration)
+    private const string NetcoreApiKey = "YOUR_API_KEY"; // <<< REPLACE
+    private const string NetcoreListId = "YOUR_LIST_ID"; // <<< REPLACE
+    private const string NetcoreApiUrl = "https://api.netcoresmartech.com/apiv2";
+
+    // Static HttpClient is generally recommended
+    private static readonly HttpClient httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+
+    public void Execute(IServiceProvider serviceProvider)
+    {
+        ITracingService tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
+        IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
+        IOrganizationServiceFactory serviceFactory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
+        IOrganizationService service = serviceFactory.CreateOrganizationService(context.UserId);
+
+        if (!(context.InputParameters.Contains("Target") &amp;&amp; context.InputParameters["Target"] is Entity)) return;
+
+        Entity entity = (Entity)context.InputParameters["Target"];
+
+        // --- Verify Correct Trigger Conditions ---
+        // TODO: Replace 'contact' if using 'lead' or another entity
+        if (entity.LogicalName != "contact") return;
+        if (context.MessageName.ToLower() != "create" &amp;&amp; context.MessageName.ToLower() != "update") return;
+        // TODO: Check Plugin Stage (e.g., PostOperation sync/async)
+
+        try
+        {
+            tracingService.Trace($"NetcoreSyncPlugin: Processing {context.MessageName} for contact ID: {entity.Id}");
+
+            // --- Retrieve Necessary Data ---
+            // TODO: Use ACTUAL schema names from your Dynamics instance
+            var columnsToRetrieve = new ColumnSet("firstname", "lastname", "emailaddress1", "mobilephone");
+
+            Entity fullContactRecord = service.Retrieve(entity.LogicalName, entity.Id, columnsToRetrieve);
+
+            // Extract data (handle potential nulls safely)
+            string firstName = fullContactRecord.GetAttributeValue&lt;string&gt;("firstname") ?? "";
+            string lastName = fullContactRecord.GetAttributeValue&lt;string&gt;("lastname") ?? "";
+            string email = fullContactRecord.GetAttributeValue&lt;string&gt;("emailaddress1") ?? "";
+            string mobile = fullContactRecord.GetAttributeValue&lt;string&gt;("mobilephone") ?? "";
+
+            // --- Basic Validation ---
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                tracingService.Trace("NetcoreSyncPlugin: Skipping - Email address is missing.");
+                return;
+            }
+            tracingService.Trace($"NetcoreSyncPlugin: Data - Email={email}, Mobile={mobile}");
+
+            // --- Call Netcore API (Sync Wrapper - Test carefully!) ---
+            bool success = SendContactToNetcoreSync(tracingService, email, mobile, firstName, lastName);
+
+            if (success) {
+                tracingService.Trace("NetcoreSyncPlugin: Successfully sent contact to Netcore.");
+                // TODO: Optionally update Dynamics record on success
+            } else {
+                tracingService.Trace("NetcoreSyncPlugin: Failed to send contact to Netcore.");
+                // TODO: Optionally update record or throw error
+                // throw new InvalidPluginExecutionException("Failed to sync contact to Netcore.");
+            }
+        }
+        catch (Exception ex)
+        {
+            tracingService.Trace($"NetcoreSyncPlugin: An error occurred: {ex}");
+            throw new InvalidPluginExecutionException("An error occurred in the Netcore Sync Plugin.", ex);
+        }
+    }
+
+    // Synchronous wrapper
+    private bool SendContactToNetcoreSync(ITracingService tracer, string e, string m, string f, string l)
+    {
+         tracer.Trace("Entering SendContactToNetcoreSync");
+         try {
+             // Use .GetAwaiter().GetResult() carefully in sync plugins
+             return SendContactToNetcoreAsync(tracer, e, m, f, l).GetAwaiter().GetResult();
+         } catch(Exception ex) {
+              tracer.Trace($"Error in SendContactToNetcoreSync wrapper: {ex}"); return false;
+         } finally { tracer.Trace("Leaving SendContactToNetcoreSync"); }
+    }
+
+    // Async HTTP call method
+    private async Task&lt;bool&gt; SendContactToNetcoreAsync(ITracingService tr, string email, string mob, string first, string last)
+    {
+        tr.Trace("Entering SendContactToNetcoreAsync");
+        var contactPayload = new Dictionary&lt;string, string&gt; {
+            { "EMAIL", email }, { "MOBILE", mob ?? "" }, { "FIRST_NAME", first ?? "" }, { "LAST_NAME", last ?? "" }
+            // TODO: Add other mapped fields if needed
+        };
+        string dataJsonString = JsonSerializer.Serialize(contactPayload);
+        tr.Trace($"Netcore Payload (JSON): {dataJsonString}");
+        var formContent = new FormUrlEncodedContent(new[] { new KeyValuePair&lt;string, string&gt;("data", dataJsonString) });
+        string requestUrl = $"{NetcoreApiUrl}?type=contact&amp;activity=add&amp;apikey={NetcoreApiKey}&amp;listid={NetcoreListId}";
+        tr.Trace($"Netcore Request URL: {requestUrl}");
+
+        try {
+            HttpResponseMessage response = await httpClient.PostAsync(requestUrl, formContent);
+            string responseBody = await response.Content.ReadAsStringAsync();
+            tr.Trace($"Netcore Response Status: {response.StatusCode}, Body: {responseBody}");
+            return response.IsSuccessStatusCode; // Checks 2xx
+        } catch (Exception e) {
+            tr.Trace($"Netcore API call error: {e}"); return false;
+        } finally { tr.Trace("Leaving SendContactToNetcoreAsync"); }
+    }
+}
+            </code></pre>
+            <p>
+                Remember this C# code needs to be compiled, signed, and deployed using the Plugin Registration Tool.
+            </p>
+
+            <h3>Power Automate (Flow) Outline</h3>
+             <p>
+                Using Power Automate is often simpler for Dynamics 365 Online:
+            </p>
+            <ol>
+                <li><strong>Trigger:</strong> Dataverse - "When a row is added, modified or deleted" (Configure for Create/Update of Contact/Lead, set Filtering Attributes).</li>
+                <li><strong>Action (Optional):</strong> Dataverse - "Get a row by ID" (Use Trigger output Row ID).</li>
+                <li><strong>Action:</strong> HTTP - Configure POST request:
+                    <ul>
+                        <li><strong>URI:</strong> Netcore API URL with API key/List ID (use Environment Variables ideally).</li>
+                        <li><strong>Headers:</strong> `Content-Type` : `application/x-www-form-urlencoded`</li>
+                        <li><strong>Body:</strong> `data={...JSON_STRING...}` using dynamic content for fields (e.g., `data={"EMAIL":"@{outputs('Get_a_row_by_ID')?['body/emailaddress1']}"...}`. Ensure valid JSON structure).</li>
+                        <li><strong>Authentication:</strong> None.</li>
+                    </ul>
+                 </li>
+                 <li><strong>Action (Optional):</strong> Condition - Check HTTP Status Code, perform actions based on success/failure.</li>
+            </ol>
+        </div>
+        <h2>Netcore API Call Examples</h2>
+        <p>
+            Once you have retrieved the data within Dynamics 365 (using one of the methods above), the following examples show how to structure the actual HTTP POST request to Netcore's API in various languages. The C# example below is similar to the one used within the plugin code shown previously.
+        </p>
 
         <div class="tabs">
             <button class="tab-button active" data-target="#python-content">Python</button>
             <button class="tab-button" data-target="#java-content">Java</button>
             <button class="tab-button" data-target="#javascript-content">JavaScript (Node.js)</button>
-            <button class="tab-button" data-target="#csharp-content">C#</button>
+            <button class="tab-button" data-target="#csharp-content">C# (Standalone)</button>
             <button class="tab-button" data-target="#php-content">PHP</button>
         </div>
 
@@ -176,70 +277,52 @@
 
             <div id="python-content" class="tab-pane active">
                 <pre><code class="language-python">
+# (Python code example remains the same as before)
 import requests
 import json
 import urllib.parse
 
 # --- Configuration ---
-NETCORE_API_KEY = 'YOUR_API_KEY'  # Replace with your actual API Key
-NETCORE_LIST_ID = 'YOUR_LIST_ID'  # Replace with your actual List ID
+NETCORE_API_KEY = 'YOUR_API_KEY'
+NETCORE_LIST_ID = 'YOUR_LIST_ID'
 BASE_URL = 'https://api.netcoresmartech.com/apiv2'
 
-# --- Data from Dynamics 365 (Example) ---
+# --- Data (Simulated - In reality, comes from Dynamics) ---
 contact_data = {
     "EMAIL": "mike.python@example.com",
     "MOBILE": "9876543210",
     "FIRST_NAME": "Mike",
     "LAST_NAME": "Python"
-    # Add any other custom fields supported by your Netcore list here
-    # "CUSTOM_FIELD_1": "Value1"
 }
 
 # --- Prepare Request ---
-# Construct the full URL with query parameters
-url = f"{BASE_URL}?type=contact&activity=add&apikey={NETCORE_API_KEY}&listid={NETCORE_LIST_ID}"
-
-# Convert the contact data dictionary to a JSON string
+url = f"{BASE_URL}?type=contact&amp;activity=add&amp;apikey={NETCORE_API_KEY}&amp;listid={NETCORE_LIST_ID}"
 data_json_string = json.dumps(contact_data)
-
-# Prepare the payload for application/x-www-form-urlencoded
-# The key must be 'data' and the value is the JSON string
 payload = {'data': data_json_string}
-
-# Define headers
-headers = {
-    'Content-Type': 'application/x-www-form-urlencoded'
-}
+headers = {'Content-Type': 'application/x-www-form-urlencoded'}
 
 # --- Send Request ---
 try:
     response = requests.post(url, data=payload, headers=headers)
-    response.raise_for_status() # Raise an exception for bad status codes (4xx or 5xx)
-
-    # --- Process Response ---
+    response.raise_for_status()
     print(f"Status Code: {response.status_code}")
     print("Response Body:")
     try:
-        # Try parsing response as JSON, as Netcore often responds with JSON
         print(json.dumps(response.json(), indent=2))
     except json.JSONDecodeError:
-        # If not JSON, print as text
         print(response.text)
-
 except requests.exceptions.RequestException as e:
     print(f"An error occurred: {e}")
-    if hasattr(e, 'response') and e.response is not None:
-         print(f"Response Status: {e.response.status_code}")
-         print(f"Response Body: {e.response.text}")
 
                 </code></pre>
                 <p>
-                    This Python script uses the popular <code>requests</code> library. It constructs the API endpoint URL, prepares the contact data as a JSON string, and includes it as the value for the <code>data</code> key in the form-urlencoded payload. The <code>requests.post</code> function handles the URL encoding of the payload automatically when the <code>Content-Type</code> is set correctly or inferred. Error handling is included to catch request exceptions and check the HTTP response status. Remember to replace <code>YOUR_API_KEY</code> and <code>YOUR_LIST_ID</code>.
+                    This Python script uses <code>requests</code>. It constructs the URL, prepares contact data as JSON, puts it in the `data` form field, and sends the POST request. Assumes data is already retrieved. Replace placeholders.
                 </p>
             </div>
 
             <div id="java-content" class="tab-pane">
                 <pre><code class="language-java">
+// (Java code example remains the same as before)
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -248,454 +331,186 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
-// Requires Java 11+ for java.net.http package
-
 public class NetcoreIntegration {
-
-    // --- Configuration ---
-    private static final String NETCORE_API_KEY = "YOUR_API_KEY"; // Replace with your actual API Key
-    private static final String NETCORE_LIST_ID = "YOUR_LIST_ID"; // Replace with your actual List ID
+    private static final String NETCORE_API_KEY = "YOUR_API_KEY";
+    private static final String NETCORE_LIST_ID = "YOUR_LIST_ID";
     private static final String BASE_URL = "https://api.netcoresmartech.com/apiv2";
 
     public static void main(String[] args) {
-        // --- Data from Dynamics 365 (Example) ---
-        // In a real scenario, this would be built dynamically
+        // --- Data (Simulated - In reality, comes from Dynamics) ---
         String contactJsonData = """
-        {
-            "EMAIL": "mike.java@example.com",
-            "MOBILE": "9876543211",
-            "FIRST_NAME": "Mike",
-            "LAST_NAME": "Java"
-        }
-        """; // Using text block for readability (Java 15+)
-           // For older Java: String contactJsonData = "{\"EMAIL\": \"mike.java@example.com\", ...}";
+        {"EMAIL":"mike.java@example.com","MOBILE":"9876543211","FIRST_NAME":"Mike","LAST_NAME":"Java"}
+        """;
 
-
-        // --- Prepare Request ---
         try {
-            // Construct the full URL
-            String urlString = String.format("%s?type=contact&activity=add&apikey=%s&listid=%s",
+            String urlString = String.format("%s?type=contact&amp;activity=add&amp;apikey=%s&amp;listid=%s",
                     BASE_URL, NETCORE_API_KEY, NETCORE_LIST_ID);
-
-            // URL-encode the JSON data string
             String urlEncodedData = URLEncoder.encode(contactJsonData, StandardCharsets.UTF_8);
-
-            // Create the form-urlencoded body string: "data=URL_ENCODED_JSON"
             String requestBody = "data=" + urlEncodedData;
 
-            // Build the HTTP Request
-            HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .build();
-
+            HttpClient client = HttpClient.newBuilder().build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(urlString))
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                    .timeout(Duration.ofSeconds(20))
                     .build();
-
-            // --- Send Request & Process Response ---
             HttpResponse&lt;String&gt; response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
             System.out.println("Status Code: " + response.statusCode());
-            System.out.println("Response Body:");
-            System.out.println(response.body());
-
-            if (response.statusCode() &lt; 200 || response.statusCode() &gt;= 300) {
-                 System.err.println("Request failed with status code: " + response.statusCode());
-            }
-
-        } catch (Exception e) {
-            System.err.println("An error occurred during the API call:");
-            e.printStackTrace();
-        }
+            System.out.println("Response Body:" + response.body());
+        } catch (Exception e) { e.printStackTrace(); }
     }
 }
                 </code></pre>
                 <p>
-                    This Java example utilizes the built-in <code>java.net.http.HttpClient</code> (available since Java 11), which provides a modern way to handle HTTP requests. It first constructs the JSON string for the contact data. Crucially, it then URL-encodes this JSON string using <code>URLEncoder.encode</code> before prepending <code>data=</code> to create the final form-urlencoded request body. The request is configured as a POST with the appropriate <code>Content-Type</code> header. Basic error handling is included. Remember to replace <code>YOUR_API_KEY</code> and <code>YOUR_LIST_ID</code>. Note: '&lt;' and '&gt;' in generics like <code>HttpResponse&lt;String&gt;</code> are escaped as <code>&amp;lt;</code> and <code>&amp;gt;</code> to be valid HTML.
+                    This Java example uses <code>java.net.http.HttpClient</code> (Java 11+). It URL-encodes the JSON data string and sends it as the value of the `data` form parameter. Assumes data is retrieved. Replace placeholders. Note HTML escaping (&amp;lt;, &amp;gt;, &amp;amp;).
                 </p>
             </div>
 
             <div id="javascript-content" class="tab-pane">
                 <pre><code class="language-javascript">
-// This example uses Node.js with the built-in 'https' module
-// For simpler syntax, you could use libraries like 'axios' or 'node-fetch'
-// npm install axios
-// OR
-// npm install node-fetch
-
+// (Node.js code example remains the same as before)
 const https = require('https');
-const querystring = require('querystring'); // For form-urlencoded data
+const querystring = require('querystring');
 
-// --- Configuration ---
-const NETCORE_API_KEY = 'YOUR_API_KEY'; // Replace with your actual API Key
-const NETCORE_LIST_ID = 'YOUR_LIST_ID'; // Replace with your actual List ID
-const BASE_URL = 'api.netcoresmartech.com'; // Hostname for https module
-const API_PATH = `/apiv2?type=contact&activity=add&apikey=${NETCORE_API_KEY}&listid=${NETCORE_LIST_ID}`;
+const NETCORE_API_KEY = 'YOUR_API_KEY';
+const NETCORE_LIST_ID = 'YOUR_LIST_ID';
+const BASE_URL = 'api.netcoresmartech.com';
+const API_PATH = `/apiv2?type=contact&amp;activity=add&amp;apikey=${NETCORE_API_KEY}&amp;listid=${NETCORE_LIST_ID}`;
 
-// --- Data from Dynamics 365 (Example) ---
-const contactData = {
-    "EMAIL": "mike.js@example.com",
-    "MOBILE": "9876543212",
-    "FIRST_NAME": "Mike",
-    "LAST_NAME": "JavaScript"
-};
+// --- Data (Simulated - In reality, comes from Dynamics) ---
+const contactData = {"EMAIL":"mike.js@example.com","MOBILE":"9876543212","FIRST_NAME":"Mike","LAST_NAME":"JavaScript"};
 
-// --- Prepare Request ---
-// Convert contact data object to JSON string
 const dataJsonString = JSON.stringify(contactData);
+const postData = querystring.stringify({ data: dataJsonString });
 
-// Create the form-urlencoded payload { data: 'JSON_STRING' }
-const postData = querystring.stringify({
-    data: dataJsonString
-});
-
-// Configure the HTTP request options
 const options = {
-    hostname: BASE_URL,
-    path: API_PATH,
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Content-Length': Buffer.byteLength(postData) // Important for Node's https module
-    }
+    hostname: BASE_URL, path: API_PATH, method: 'POST',
+    headers: {'Content-Type':'application/x-www-form-urlencoded','Content-Length':Buffer.byteLength(postData)}
 };
 
-// --- Send Request ---
 const req = https.request(options, (res) =&gt; {
     console.log(`Status Code: ${res.statusCode}`);
-    console.log('Headers:', JSON.stringify(res.headers, null, 2));
-
     let responseBody = '';
     res.setEncoding('utf8');
-
-    // Accumulate response data
-    res.on('data', (chunk) =&gt; {
-        responseBody += chunk;
-    });
-
-    // Process complete response
-    res.on('end', () =&gt; {
-        console.log('Response Body:');
-        try {
-            // Attempt to parse as JSON
-            console.log(JSON.stringify(JSON.parse(responseBody), null, 2));
-        } catch (e) {
-            // If not JSON, print raw text
-            console.log(responseBody);
-        }
-         if (res.statusCode &lt; 200 || res.statusCode &gt;= 300) {
-            console.error("Request failed.");
-         }
-    });
+    res.on('data', (chunk) =&gt; { responseBody += chunk; });
+    res.on('end', () =&gt; { console.log('Response Body:', responseBody); });
 });
-
-// Handle request errors
-req.on('error', (e) =&gt; {
-    console.error(`Problem with request: ${e.message}`);
-});
-
-// Write the payload data to the request body
+req.on('error', (e) =&gt; { console.error(`Problem with request: ${e.message}`); });
 req.write(postData);
-// Finalize the request
 req.end();
-
-console.log("Sending request to Netcore...");
-
-/*
-// --- Alternative using node-fetch (npm install node-fetch) ---
-const fetch = require('node-fetch'); // v2 syntax, for v3 use `import fetch from 'node-fetch';`
-const { URLSearchParams } = require('url'); // Built-in
-
-async function sendWithFetch() {
-    const url = `https://${BASE_URL}${API_PATH}`;
-    const params = new URLSearchParams();
-    params.append('data', JSON.stringify(contactData));
-
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, // Optional with URLSearchParams usually
-            body: params
-        });
-        const responseData = await response.json(); // Assumes JSON response
-        console.log(`Workspace Status: ${response.status}`);
-        console.log('Fetch Response:', JSON.stringify(responseData, null, 2));
-        if (!response.ok) {
-             console.error("Fetch request failed.");
-        }
-    } catch (error) {
-        console.error('Fetch Error:', error);
-    }
-}
-// sendWithFetch(); // Uncomment to run the fetch example
-*/
                 </code></pre>
                  <p>
-                    This JavaScript example is designed for a Node.js environment. It uses the built-in <code>https</code> and <code>querystring</code> modules. The contact data is stringified to JSON, and then <code>querystring.stringify</code> is used to create the `data=JSON_STRING` payload, automatically handling URL encoding. The request options specify the method, headers (including <code>Content-Type</code> and <code>Content-Length`), and path. An alternative using the <code>node-fetch</code> library (which provides a <code>fetch</code>-like API similar to browsers) is also commented out for reference. Remember to replace <code>YOUR_API_KEY</code> and <code>YOUR_LIST_ID</code>. Note: Arrow functions `=>` are escaped as `=&amp;gt;`, and less than/greater than (`<`, `>`) are escaped as `&amp;lt;` and `&amp;gt;` to be valid HTML.
-                    <br><strong>Security Note:</strong> Avoid running code with your API key directly in a web browser's JavaScript, as it would be exposed to users. Use server-side JavaScript (like Node.js) or an intermediary API.
+                    This Node.js example uses built-in modules. It stringifies the data, then uses `querystring.stringify` to create the `data=JSON_STRING` payload. Assumes data is retrieved. Replace placeholders. Note HTML escaping (&amp;amp;). <br><strong>Security Note:</strong> Avoid exposing API keys in client-side browser JS.
                 </p>
             </div>
 
             <div id="csharp-content" class="tab-pane">
                  <pre><code class="language-csharp">
+// (Standalone C# example remains similar to plugin HTTP call part)
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Text.Json; // Requires .NET Core 3.0+ or System.Text.Json NuGet package
-// using Newtonsoft.Json; // Alternative: Use Newtonsoft.Json NuGet package
+using System.Text.Json;
 using System.Threading.Tasks;
 
-public class NetcoreIntegration
+public class NetcoreApiClient
 {
-    // --- Configuration ---
-    private static readonly string NetcoreApiKey = "YOUR_API_KEY"; // Replace with your actual API Key
-    private static readonly string NetcoreListId = "YOUR_LIST_ID"; // Replace with your actual List ID
-    private static readonly string BaseUrl = "https://api.netcoresmartech.com/apiv2";
-
-    // Use a static HttpClient instance for performance and resource management
+    private static readonly string NetcoreApiKey = "YOUR_API_KEY"; // <<< REPLACE
+    private static readonly string NetcoreListId = "YOUR_LIST_ID"; // <<< REPLACE
+    private static readonly string NetcoreApiUrl = "https://api.netcoresmartech.com/apiv2";
     private static readonly HttpClient httpClient = new HttpClient();
 
-    public static async Task SendContactToNetcore()
+    public static async Task SendContactToNetcoreStandalone()
     {
-        // --- Data from Dynamics 365 (Example) ---
-        var contactData = new Dictionary&lt;string, string&gt;
-        {
-            { "EMAIL", "mike.csharp@example.com" },
-            { "MOBILE", "9876543213" },
-            { "FIRST_NAME", "Mike" },
-            { "LAST_NAME", "CSharp" }
-            // Add other custom fields as needed
-            // { "CUSTOM_FIELD_1", "Value1" }
+        // --- Data (Simulated - In reality, comes from Dynamics) ---
+        var contactData = new Dictionary&lt;string, string&gt; {
+            { "EMAIL", "mike.csharp.standalone@example.com" }, { "MOBILE", "9876543213" },
+            { "FIRST_NAME", "Mike" }, { "LAST_NAME", "CSharp" }
         };
 
-        // --- Prepare Request ---
-        // Construct the full URL
-        string requestUrl = $"{BaseUrl}?type=contact&activity=add&apikey={NetcoreApiKey}&listid={NetcoreListId}";
-
-        // Serialize the contact data dictionary to a JSON string
         string dataJsonString = JsonSerializer.Serialize(contactData);
-        // Alternative using Newtonsoft.Json:
-        // string dataJsonString = JsonConvert.SerializeObject(contactData);
-
-        // Prepare the form-urlencoded content
-        // The key must be 'data', and the value is the JSON string
-        var formContent = new FormUrlEncodedContent(new[]
-        {
+        var formContent = new FormUrlEncodedContent(new[] {
             new KeyValuePair&lt;string, string&gt;("data", dataJsonString)
         });
 
-        // --- Send Request ---
-        Console.WriteLine($"Sending POST request to: {requestUrl}");
-        try
-        {
-            // HttpClient automatically handles the Content-Type header for FormUrlEncodedContent
+        string requestUrl = $"{NetcoreApiUrl}?type=contact&amp;activity=add&amp;apikey={NetcoreApiKey}&amp;listid={NetcoreListId}";
+        Console.WriteLine($"Sending POST to: {requestUrl}");
+
+        try {
             HttpResponseMessage response = await httpClient.PostAsync(requestUrl, formContent);
-
-            // --- Process Response ---
             string responseBody = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Status Code: {(int)response.StatusCode} ({response.ReasonPhrase})");
-            Console.WriteLine("Response Body:");
-
-            // Try to pretty-print if it's JSON
-            try
-            {
-                using var jsonDoc = JsonDocument.Parse(responseBody);
-                Console.WriteLine(JsonSerializer.Serialize(jsonDoc, new JsonSerializerOptions { WriteIndented = true }));
-            }
-            catch (JsonException)
-            {
-                // If not valid JSON, print as plain text
-                Console.WriteLine(responseBody);
-            }
-
-            // Check if the request was successful
-            if (!response.IsSuccessStatusCode)
-            {
-                Console.Error.WriteLine($"Request failed. See details above.");
-            }
-            // Or use: response.EnsureSuccessStatusCode(); // Throws exception on failure
-
-        }
-        catch (HttpRequestException e)
-        {
-            Console.Error.WriteLine($"Request error: {e.Message}");
-            if (e.InnerException != null) {
-                 Console.Error.WriteLine($"Inner Exception: {e.InnerException.Message}");
-            }
-        }
-        catch (TaskCanceledException e) // Handle timeouts
-        {
-             Console.Error.WriteLine($"Request timed out: {e.Message}");
-        }
-        catch (Exception e) // Catch other potential exceptions
-        {
-            Console.Error.WriteLine($"An unexpected error occurred: {e.Message}");
+            Console.WriteLine($"Status: {(int)response.StatusCode}");
+            Console.WriteLine($"Response: {responseBody}");
+            response.EnsureSuccessStatusCode(); // Throw on failure
+        } catch (Exception e) {
+            Console.Error.WriteLine($"Error: {e.Message}");
         }
     }
-
-    // Example of how to call the async method
-    public static async Task Main(string[] args)
-    {
-        await SendContactToNetcore();
-        // Keep console open in simple console apps
-        // Console.WriteLine("\nPress any key to exit...");
-        // Console.ReadKey();
-    }
+    // Call it: await SendContactToNetcoreStandalone();
 }
                 </code></pre>
                  <p>
-                    This C# example uses the standard <code>System.Net.Http.HttpClient</code> for making the request. A dictionary holds the contact data, which is then serialized into a JSON string using <code>System.Text.Json</code> (or alternatively Newtonsoft.Json). The key part is creating a <code>FormUrlEncodedContent</code> object. This object takes a collection of key-value pairs (here, just one pair with key `data` and value as the JSON string) and automatically handles the URL encoding and sets the <code>Content-Type</code> header to `application/x-www-form-urlencoded` when used with <code>HttpClient.PostAsync</code>. The code uses <code>async/await</code> for non-blocking I/O and includes error handling for request exceptions and non-success status codes. Remember to replace <code>YOUR_API_KEY</code> and <code>YOUR_LIST_ID</code>. Note: '&lt;' and '&gt;' in generics like <code>Dictionary&lt;string, string&gt;</code> are escaped as <code>&amp;lt;</code> and <code>&amp;gt;</code>.
+                    This C# example uses <code>HttpClient</code> and <code>FormUrlEncodedContent</code>. It serializes data to JSON and includes it in the form payload. This standalone version is very similar to the HTTP call part within the plugin example. Assumes data is retrieved. Replace placeholders. Note HTML escaping (&amp;lt;, &amp;gt;, &amp;amp;).
                 </p>
             </div>
 
             <div id="php-content" class="tab-pane">
                  <pre><code class="language-php">
 &lt;?php
-
-// --- Configuration ---
-$netcoreApiKey = 'YOUR_API_KEY'; // Replace with your actual API Key
-$netcoreListId = 'YOUR_LIST_ID'; // Replace with your actual List ID
+// (PHP code example remains the same as before)
+$netcoreApiKey = 'YOUR_API_KEY'; // <<< REPLACE
+$netcoreListId = 'YOUR_LIST_ID'; // <<< REPLACE
 $baseUrl = 'https://api.netcoresmartech.com/apiv2';
 
-// --- Data from Dynamics 365 (Example) ---
-$contactData = [
-    "EMAIL" => "mike.php@example.com",
-    "MOBILE" => "9876543214",
-    "FIRST_NAME" => "Mike",
-    "LAST_NAME" => "PHP",
-    // Add other custom fields as needed
-    // "CUSTOM_FIELD_1" => "Value1"
-];
+// --- Data (Simulated - In reality, comes from Dynamics) ---
+$contactData = ["EMAIL" => "mike.php@example.com", "MOBILE" => "9876543214", "FIRST_NAME" => "Mike", "LAST_NAME" => "PHP"];
 
-// --- Prepare Request ---
-// Construct the full URL
-$requestUrl = $baseUrl . '?' . http_build_query([
-    'type' => 'contact',
-    'activity' => 'add',
-    'apikey' => $netcoreApiKey,
-    'listid' => $netcoreListId
-]);
-
-// Convert the contact data array to a JSON string
+$requestUrl = $baseUrl . '?' . http_build_query(['type'=>'contact','activity'=>'add','apikey'=>$netcoreApiKey,'listid'=>$netcoreListId]);
 $dataJsonString = json_encode($contactData);
-if ($dataJsonString === false) {
-    die("Error encoding contact data to JSON: " . json_last_error_msg());
-}
-
-// Prepare the payload for application/x-www-form-urlencoded
-// The key must be 'data' and the value is the JSON string
 $postData = ['data' => $dataJsonString];
-
-// URL-encode the entire payload (e.g., "data=%7B%22EMAIL%22%3A%...")
 $postDataString = http_build_query($postData);
 
 // --- Send Request using cURL ---
 $ch = curl_init();
-
 curl_setopt($ch, CURLOPT_URL, $requestUrl);
-curl_setopt($ch, CURLOPT_POST, true); // Set method to POST
-curl_setopt($ch, CURLOPT_POSTFIELDS, $postDataString); // Add POST data
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return response as string instead of outputting
-curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    'Content-Type: application/x-www-form-urlencoded',
-    'Content-Length: ' . strlen($postDataString) // Optional but good practice
-]);
-curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // Connection timeout (seconds)
-curl_setopt($ch, CURLOPT_TIMEOUT, 20); // Total request timeout (seconds)
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, $postDataString);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
 
-// --- Execute Request & Process Response ---
 $response = curl_exec($ch);
 $httpStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $curlError = curl_error($ch);
-
 curl_close($ch);
 
-echo "Request URL: " . htmlspecialchars($requestUrl) . "\n";
 echo "Status Code: " . htmlspecialchars($httpStatusCode) . "\n";
-
-if ($curlError) {
-    echo "cURL Error: " . htmlspecialchars($curlError) . "\n";
-} else {
-    echo "Response Body:\n";
-    // Try to decode and pretty-print if JSON
-    $decodedResponse = json_decode($response, true);
-    if (json_last_error() === JSON_ERROR_NONE) {
-        echo htmlspecialchars(json_encode($decodedResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) . "\n";
-    } else {
-        // Otherwise, print raw response
-        echo htmlspecialchars($response) . "\n";
-    }
-
-    if ($httpStatusCode &lt; 200 || $httpStatusCode &gt;= 300) {
-         echo "\nRequest failed with status: " . htmlspecialchars($httpStatusCode) . "\n";
-    }
-}
-
-/*
-// --- Alternative using file_get_contents (Simpler, less control, allow_url_fopen must be enabled) ---
-
-$options = [
-    'http' => [
-        'header'  => "Content-type: application/x-www-form-urlencoded\r\n" .
-                     "Content-Length: " . strlen($postDataString) . "\r\n",
-        'method'  => 'POST',
-        'content' => $postDataString,
-        'ignore_errors' => true // Important to get response body even on error codes
-    ],
-];
-$context  = stream_context_create($options);
-$response_fgc = file_get_contents($requestUrl, false, $context);
-$http_status_header = $http_response_header[0] ?? 'HTTP/1.1 500 Internal Server Error'; // Get status from headers array
-preg_match('{HTTP\/\S*\s(\d{3})}', $http_status_header, $match);
-$status_code_fgc = $match[1] ?? 500;
-
-
-echo "\n--- File Get Contents Result ---\n";
-echo "Status Code: " . htmlspecialchars($status_code_fgc) . "\n";
-echo "Response Body:\n" . htmlspecialchars($response_fgc) . "\n";
-
-*/
-
+if ($curlError) { echo "cURL Error: " . htmlspecialchars($curlError) . "\n"; }
+else { echo "Response Body:\n" . htmlspecialchars($response) . "\n"; }
 ?&gt;
                  </code></pre>
                  <p>
-                    This PHP example utilizes the widely available cURL extension. It builds the contact data as an associative array, converts it to JSON using <code>json_encode</code>, and then prepares the `data=JSON_STRING` payload. The <code>http_build_query</code> function is used on the final payload array (`['data' => $jsonData]`) to ensure it's correctly URL-encoded for the `application/x-www-form-urlencoded` content type. cURL options are set for the URL, POST method, payload, headers, and returning the response. Error checking for both cURL execution and the HTTP status code is included. An alternative using `file_get_contents` is commented out. Remember to replace <code>YOUR_API_KEY</code> and <code>YOUR_LIST_ID</code>. Note: The opening `&lt;?php` and closing `?&gt;` tags are escaped as `&amp;lt;?php` and `?&amp;gt;`, and `<` and `>` are escaped as `&amp;lt;` and `&amp;gt;` within the code to be valid HTML.
+                    This PHP example uses cURL. It encodes the data to JSON, then uses <code>http_build_query</code> on the `['data' => $jsonData]` array to create the URL-encoded payload. Assumes data is retrieved. Replace placeholders. Note HTML escaping (&amp;lt;, &amp;gt;).
                 </p>
             </div>
 
         </div></div><script>
+        // (JavaScript for tabs remains the same as before)
         document.addEventListener('DOMContentLoaded', function() {
             const tabs = document.querySelectorAll('.tab-button');
             const panes = document.querySelectorAll('.tab-pane');
 
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
-                    // Get the target pane ID from the data-target attribute (e.g., "#python-content")
                     const targetId = tab.getAttribute('data-target');
-
-                    // Deactivate all tabs and panes first
                     tabs.forEach(t => t.classList.remove('active'));
                     panes.forEach(p => p.classList.remove('active'));
-
-                    // Activate the clicked tab
                     tab.classList.add('active');
-
-                    // Activate the corresponding content pane
                     const targetPane = document.querySelector(targetId);
                     if (targetPane) {
                         targetPane.classList.add('active');
-                    } else {
-                        console.error("Target pane not found:", targetId);
-                    }
+                    } else { console.error("Target pane not found:", targetId); }
                 });
             });
-
-            // Optional: Ensure the default active tab's content is shown on load
-            // This is already handled by the CSS (.tab-pane.active { display: block; })
-            // and the initial 'active' classes set in the HTML.
         });
     </script>
 
