@@ -37,17 +37,17 @@
             color: #cccccc; /* Light text */
             padding: 20px;
             border-radius: 6px;
-            /* overflow-x: auto; */ /* REMOVED original rule */
-            overflow-x: hidden;    /* ADDED: Explicitly hide horizontal overflow/scrollbar */
-            white-space: pre-wrap; /* ADDED: Allows lines to wrap while preserving whitespace */
-            word-wrap: break-word; /* ADDED: Helps break long words/lines if they don't wrap naturally */
+            overflow-x: hidden;    /* Keep: Hide horizontal overflow */
+            white-space: pre-wrap; /* Keep: Allow wrapping while preserving whitespace */
+            word-wrap: break-word; /* Keep: Help break long words/lines */
+            /* max-height: 600px; */ /* REMOVED: Remove the fixed height limit */
+            /* overflow-y: auto;  */ /* REMOVED: Remove the internal vertical scrollbar */
+            overflow-y: visible; /* ADDED: Explicitly let content expand vertically */
             font-family: "Consolas", "Monaco", "Courier New", monospace;
             font-size: 0.9em;
             line-height: 1.5;
             margin-top: 15px;
             margin-bottom: 15px;
-            max-height: 600px; /* Keeps vertical scroll for very long blocks */
-            overflow-y: auto;  /* ADDED: Ensure vertical scrollbar appears if max-height is exceeded */
             /* Optional: Add a visible border for a more distinct 'frame' */
             /* border: 1px solid #4a4a4a; */
         }
@@ -59,8 +59,8 @@
             color: inherit;
             font-size: inherit;
             border-radius: 0;
-            white-space: inherit; /* ADDED: Inherit wrapping from <pre> */
-            word-wrap: inherit;   /* ADDED: Inherit wrapping from <pre> */
+            white-space: inherit; /* Inherit wrapping from <pre> */
+            word-wrap: inherit;   /* Inherit wrapping from <pre> */
         }
 
     </style>
