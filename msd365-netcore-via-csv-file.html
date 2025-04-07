@@ -32,10 +32,36 @@
         .tab-pane.active{display:block}
 
         /* Code Block Styling */
-        pre{background-color:#2d2d2d;color:#ccc;padding:20px;border-radius:6px;overflow-x:auto;font-family:"Consolas","Monaco","Courier New",monospace;font-size:.9em;line-height:1.5;margin-top:15px;margin-bottom:15px; max-height: 600px; /* Limit height */}
-        pre code{background-color:transparent;padding:0;color:inherit;font-size:inherit;border-radius:0}
-        .tab-pane p {margin-top:15px;margin-bottom:10px;font-style:italic;color:#555}
-        .tab-pane h3 { font-style: normal; color: #2c3e50; border-bottom: none; margin-bottom: 10px;}
+        pre {
+            background-color: #2d2d2d; /* Dark background */
+            color: #cccccc; /* Light text */
+            padding: 20px;
+            border-radius: 6px;
+            /* overflow-x: auto; */ /* REMOVED original rule */
+            overflow-x: hidden;    /* ADDED: Explicitly hide horizontal overflow/scrollbar */
+            white-space: pre-wrap; /* ADDED: Allows lines to wrap while preserving whitespace */
+            word-wrap: break-word; /* ADDED: Helps break long words/lines if they don't wrap naturally */
+            font-family: "Consolas", "Monaco", "Courier New", monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            max-height: 600px; /* Keeps vertical scroll for very long blocks */
+            overflow-y: auto;  /* ADDED: Ensure vertical scrollbar appears if max-height is exceeded */
+            /* Optional: Add a visible border for a more distinct 'frame' */
+            /* border: 1px solid #4a4a4a; */
+        }
+
+        pre code {
+            /* Ensure the inner code tag doesn't override wrapping */
+            background-color: transparent;
+            padding: 0;
+            color: inherit;
+            font-size: inherit;
+            border-radius: 0;
+            white-space: inherit; /* ADDED: Inherit wrapping from <pre> */
+            word-wrap: inherit;   /* ADDED: Inherit wrapping from <pre> */
+        }
 
     </style>
 </head>
