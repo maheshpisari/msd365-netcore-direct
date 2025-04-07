@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamics 365 Bulk Export to S3 & Netcore Trigger</title>
+    <style>
+        /* General Styling (Same as previous examples) */
+        body{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;line-height:1.6;margin:0;padding:0;background-color:#f4f7f9;color:#333}
+        .container{max-width:950px; /* Slightly wider for longer code */ margin:30px auto;padding:25px;background-color:#fff;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+        h1,h2,h3{color:#2c3e50;border-bottom:2px solid #e0e0e0;padding-bottom:10px;margin-bottom:20px}
+        h1{font-size:2em}
+        h2{font-size:1.5em;margin-top:30px}
+        h3{font-size:1.2em;margin-top:25px;border-bottom-style:dashed;border-bottom-width:1px}
+        p{margin-bottom:15px}
+        code{font-family:"Consolas","Monaco","Courier New",monospace;background-color:#eef1f3;padding:2px 6px;border-radius:4px;font-size:.9em;color:#c7254e}
+        .important-note{background-color:#fffbe6;border:1px solid #ffe58f;padding:15px;border-radius:4px;margin:15px 0}
+        .important-note strong{color:#d46b08}
+        .important-note ul{margin-top:10px;margin-bottom:5px; padding-left: 20px;}
+        .important-note li{margin-bottom:5px}
+        .code-comment{color:#888; font-style: italic;}
+
+        /* Tab Styling */
+        .tabs{margin-bottom:0;border-bottom:1px solid #d4dadf;padding-bottom:-1px}
+        .tab-button{padding:10px 20px;cursor:pointer;border:1px solid transparent;border-bottom:none;background-color:#f4f7f9;margin-right:5px;border-radius:5px 5px 0 0;font-size:1em;position:relative;bottom:-1px;transition:background-color .3s ease,border-color .3s ease}
+        .tab-button:hover{background-color:#e9edf1}
+        .tab-button.active{background-color:#fff;border-color:#d4dadf;border-bottom:1px solid #fff;font-weight:700;color:#3498db}
+
+        /* Tab Content Area Styling */
+        .tab-content-wrapper{padding:20px;border:1px solid #d4dadf;border-top:none;background-color:#fff;border-radius:0 0 8px 8px;min-height:300px}
+        .tab-pane{display:none}
+        .tab-pane.active{display:block}
+
+        /* Code Block Styling */
+        pre{background-color:#2d2d2d;color:#ccc;padding:20px;border-radius:6px;overflow-x:auto;font-family:"Consolas","Monaco","Courier New",monospace;font-size:.9em;line-height:1.5;margin-top:15px;margin-bottom:15px; max-height: 600px; /* Limit height */}
+        pre code{background-color:transparent;padding:0;color:inherit;font-size:inherit;border-radius:0}
+        .tab-pane p {margin-top:15px;margin-bottom:10px;font-style:italic;color:#555}
+        .tab-pane h3 { font-style: normal; color: #2c3e50; border-bottom: none; margin-bottom: 10px;}
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Dynamics 365 Bulk Export to S3 & Netcore Trigger</h1>
+        <p>
+            This document outlines conceptual code examples for a workflow that:
+            <ol>
+                <li>Fetches contact data (e.g., Email, Mobile, Name) from Microsoft Dynamics 365 / Dataverse.</li>
+                <li>Writes the fetched data to a local CSV file.</li>
+                <li>Uploads the CSV file to an AWS S3 bucket.</li>
+                <li>Triggers Netcore's bulk upload API, pointing it to the uploaded S3 file path.</li>
+            </ol>
+        </p>
+        <p>Examples are provided for Python, Java, JavaScript (Node.js), C#, and PHP.</p>
+        <div class="important-note">
+             <strong>CRITICAL REQUIREMENTS & DISCLAIMERS (Apply to ALL languages):</strong>
+             <ul>
+                 <li><strong>Conceptual Code Only:</strong> These are patterns, not production-ready code. Authentication logic is simplified/omitted, error handling is basic.</li>
+                 <li><strong>Authentication:</strong> You MUST implement proper OAuth 2.0 Client Credentials flow (using MSAL or equivalent libraries) to connect to Dynamics 365. Requires an Azure AD App Registration with secrets/certs and correct permissions.</li>
+                 <li><strong>Placeholders:</strong> Replace ALL placeholders (URLs, IDs, Keys, Secrets, Bucket Names, Field Names marked `<<< REPLACE >>>`).</li>
+                 <li><strong>Library Installation:** You need to install the specified external libraries/SDKs for each language (e.g., using pip, Maven, npm, NuGet, Composer).</li>
+                 <li><strong>AWS Credentials:</strong> Ensure AWS credentials (with S3 PutObject permissions) are configured in the environment where the script runs.</li>
+                 <li><strong>Netcore S3 Permissions:</strong> Netcore **MUST** have separate permissions configured to **READ** the CSV file from your specified S3 bucket/path. Consult Netcore documentation/support.</li>
+                 <li><strong>Error Handling & Logging:</strong> Implement robust error handling and logging for production use.</li>
+                 <li><strong>Dynamics Field Names:</strong> Verify and use the exact schema names for your Dynamics 365 fields.</li>
+             </ul>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" data-target="#python-content">Python</button>
+            <button class="tab-button" data-target="#java-content">Java</button>
+            <button class="tab-button" data-target="#javascript-content">JavaScript (Node.js)</button>
+            <button class="tab-button" data-target="#csharp-content">C#</button>
+            <button class="tab-button" data-target="#php-content">PHP</button>
+        </div>
+
+        <div class="tab-content-wrapper">
+
+            <div id="python-content" class="tab-pane active">
+                <h3>Python Conceptual Example</h3>
+                <p>Uses `requests` for HTTP, `msal` for auth, `csv` for file writing, `boto3` for S3.</p>
+                <div class="important-note">
+                    <strong>Prerequisites:</strong> `pip install requests msal boto3`. Configure AWS Credentials. Grant Netcore S3 read access. Fill in ALL placeholders. Implement full MSAL auth flow.
+                </div>
+                <pre><code class="language-python">
+# --- Python Bulk Export/Upload Script ---
+import requests, json, csv, os, datetime, urllib.parse, time
+from msal import ConfidentialClientApplication # Requires: pip install msal
+import boto3 # Requires: pip install boto3
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError, ClientError
+
+# --- Configuration (REPLACE ALL PLACEHOLDERS!) ---
+DYNAMICS_API_ENDPOINT = "https://yourorg.api.crm[X].dynamics.com/api/data/v9.2/" # &lt;&lt;&lt; REPLACE
+AZURE_TENANT_ID = "YOUR_AZURE_TENANT_ID" # &lt;&lt;&lt; REPLACE
+DYNAMICS_CLIENT_ID = "YOUR_APP_CLIENT_ID" # &lt;&lt;&lt; REPLACE
+DYNAMICS_CLIENT_SECRET = "YOUR_APP_CLIENT_SECRET" # &lt;&lt;&lt; REPLACE (Keep Secure!)
+DYNAMICS_SCOPE = [f"{DYNAMICS_API_ENDPOINT.replace('/api/data/v9.2/', '')}/.default"]
+DYNAMICS_ENTITY_PLURAL_NAME = "contacts"; DYNAMICS_FIELDS_SELECT = "firstname,lastname,emailaddress1,mobilephone" # &lt;&lt;&lt; REPLACE/VERIFY
+DYNAMICS_FILTER = "$filter=statecode eq 0" # Optional filter, e.g., active contacts
+
+S3_BUCKET_NAME = "your-s3-bucket-for-netcore" # &lt;&lt;&lt; REPLACE
+S3_REGION = "your-aws-region" # &lt;&lt;&lt; REPLACE
+S3_FOLDER_PATH = "netcore_exports/" # Include trailing slash
+
+NETCORE_API_KEY = "YOUR_NETCORE_API_KEY" # &lt;&lt;&lt; REPLACE
+NETCORE_LIST_ID = "YOUR_NETCORE_LIST_ID" # &lt;&lt;&lt; REPLACE
+NETCORE_NOTIFY_EMAIL = "your_email@example.com" # &lt;&lt;&lt; REPLACE or None
+NETCORE_CALLBACK_URL = None # &lt;&lt;&lt; REPLACE or None
+NETCORE_BULK_API_URL = "https://api.netcoresmartech.com/apiv2"
+
+dynamics_access_token = None; token_expiry_time = 0
+
+# --- Function to Get Dynamics Access Token (Conceptual - Needs full MSAL error handling) ---
+def get_dynamics_access_token():
+    global dynamics_access_token, token_expiry_time; current_time = time.time()
+    if dynamics_access_token and current_time &lt; (token_expiry_time - 300): return dynamics_access_token
+    print("Acquiring new Dynamics access token..."); # ... (MSAL logic as in previous example) ...
+    # Replace with full MSAL implementation using ConfidentialClientApplication
+    print("!!! Skipping Real Authentication - Returning Placeholder Token !!!"); return "PLACEHOLDER_TOKEN" # Placeholder
+
+# --- Function to Fetch Data from Dynamics with Pagination ---
+def fetch_all_dynamics_contacts(select_fields, filter_query=None):
+    all_contacts = []; query = f"$select={select_fields}"; page_count = 0
+    if filter_query: query += f"&amp;{filter_query}" # Use &amp; for filter with select
+    fetch_url = f"{DYNAMICS_API_ENDPOINT}{DYNAMICS_ENTITY_PLURAL_NAME}?{query}"
+    while fetch_url:
+        page_count += 1; token = get_dynamics_access_token() # Replace with real call
+        if not token or token == "PLACEHOLDER_TOKEN": print("ERROR: No valid token."); return None # Use simulation for placeholder
+        # In simulation mode, just return a few fake records and stop
+        if token == "PLACEHOLDER_TOKEN" and page_count == 1:
+             print("SIMULATING Dynamics Fetch - Returning fake data")
+             return [{"firstname":"SimFn1","lastname":"SimLn1","emailaddress1":"sim1@test.com","mobilephone":"111"},
+                     {"firstname":"SimFn2","lastname":"SimLn2","emailaddress1":"sim2@test.com","mobilephone":"222"}]
+        elif token == "PLACEHOLDER_TOKEN" and page_count > 1: break # Stop simulation after 1 page
+
+        headers = {'Authorization':f'Bearer {token}', 'Accept':'application/json', 'OData-MaxVersion':'4.0', 'OData-Version':'4.0', 'Prefer':'odata.maxpagesize=1000,odata.include-annotations="*"'}
+        print(f"Fetching Dynamics page {page_count}..."); # Log URL carefully if sensitive
+        try:
+            response = requests.get(fetch_url, headers=headers, timeout=60); response.raise_for_status(); data = response.json()
+            records = data.get('value', []); all_contacts.extend(records); print(f" Fetched {len(records)}. Total: {len(all_contacts)}")
+            fetch_url = data.get('@odata.nextLink'); print(" Next page found." if fetch_url else " No more pages.")
+        except Exception as e: print(f"ERROR fetching page {page_count}: {e}"); return None
+    print(f"--- Finished Dynamics fetch. Total records: {len(all_contacts)} ---"); return all_contacts
+
+# --- Function to Write Data to CSV ---
+def write_contacts_to_csv(contacts, filename, field_map):
+    if not contacts: print("No contacts to write."); return False
+    header = list(field_map.keys()); print(f"Writing {len(contacts)} records to {filename}")
+    rows_written = 0
+    try:
+        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=header); writer.writeheader()
+            for contact in contacts:
+                row_data = {csv_hdr: contact.get(dyn_fld, "") for csv_hdr, dyn_fld in field_map.items()}
+                if not row_data.get("EMAIL"): print(f"Skipping record without EMAIL..."); continue # Basic validation
+                writer.writerow(row_data); rows_written += 1
+        print(f"Wrote {rows_written} valid records."); return rows_written > 0
+    except Exception as e: print(f"ERROR writing CSV {filename}: {e}"); return False
+
+# --- Function to Upload CSV to S3 ---
+def upload_csv_to_s3(local_filename, bucket, s3_key):
+    print(f"Uploading {local_filename} to S3 s3://{bucket}/{s3_key}");
+    try:
+        # Ensure AWS credentials are configured (env vars, ~/.aws/credentials, IAM role)
+        s3_client = boto3.client('s3', region_name=S3_REGION); s3_client.upload_file(local_filename, bucket, s3_key)
+        print("S3 Upload successful."); return True
+    except (NoCredentialsError, PartialCredentialsError): print("ERROR: AWS credentials not found."); return False
+    except ClientError as e: print(f"ERROR uploading to S3: {e}"); return False
+    except Exception as e: print(f"ERROR during S3 upload: {e}"); return False
+
+# --- Function to Trigger Netcore Bulk API ---
+def trigger_netcore_bulk_upload(s3_file_path):
+    print(f"Triggering Netcore bulk upload for S3 path: {s3_file_path}")
+    params = {'type':'contact','activity':'bulkupload','apikey':NETCORE_API_KEY,'path':s3_file_path,'listid':NETCORE_LIST_ID}
+    if NETCORE_NOTIFY_EMAIL: params['notifyemail'] = NETCORE_NOTIFY_EMAIL
+    if NETCORE_CALLBACK_URL: params['callback'] = urllib.parse.quote(NETCORE_CALLBACK_URL, safe=':/')
+    try:
+        print(f"Calling Netcore API: {NETCORE_BULK_API_URL} with params: {params}")
+        response = requests.get(NETCORE_BULK_API_URL, params=params, timeout=45); response.raise_for_status()
+        print(f"Netcore API Status Code: {response.status_code}"); print("Netcore Response:"); print(response.text)
+        # TODO: Parse response JSON to confirm job submission status
+        return True
+    except Exception as e: print(f"ERROR calling Netcore API: {e}"); return False
+
+# --- Main Execution Logic ---
+if __name__ == "__main__":
+    start_time = time.time(); print(f"--- Starting Process [{datetime.datetime.now()}] ---")
+    # Define mapping: CSV Header -> Dynamics Field Schema Name (must be in DYNAMICS_FIELDS_SELECT)
+    csv_field_map = {"EMAIL": "emailaddress1", "MOBILE": "mobilephone", "FIRST_NAME": "firstname", "LAST_NAME": "lastname"}
+    dynamics_contacts = fetch_all_dynamics_contacts(DYNAMICS_FIELDS_SELECT, DYNAMICS_FILTER)
+    if dynamics_contacts is None or not dynamics_contacts: print("FATAL: Failed or no data from Dynamics."); exit(1)
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S"); local_csv_filename = f"dynamics_contacts_{timestamp}.csv"
+    if not write_contacts_to_csv(dynamics_contacts, local_csv_filename, csv_field_map): print("FATAL: Failed writing CSV."); exit(1)
+
+    s3_object_key = f"{S3_FOLDER_PATH}contacts_{timestamp}.csv" if S3_FOLDER_PATH else f"contacts_{timestamp}.csv"
+    upload_success = upload_csv_to_s3(local_csv_filename, S3_BUCKET_NAME, s3_object_key)
+    try: os.remove(local_csv_filename); print(f"Removed local file: {local_csv_filename}")
+    except OSError as e: print(f"Warning: Failed to remove local file {local_csv_filename}: {e}")
+    if not upload_success: print("FATAL: Failed S3 upload."); exit(1)
+
+    if not trigger_netcore_bulk_upload(s3_object_key): print("ERROR: Failed Netcore trigger.")
+    else: print("Process initiated. Check Netcore for status.")
+
+    print(f"--- Process Finished. Time: {time.time() - start_time:.2f}s ---")
+
+                </code></pre>
+            </div>
+
+            <div id="java-content" class="tab-pane">
+                <h3>Java Conceptual Example</h3>
+                <p>Uses Java 11+ `HttpClient`, a JSON library (like Jackson/Gson), a CSV library (like Apache Commons CSV), MSAL4J for auth, AWS SDK for Java v2 for S3.</p>
+                 <div class="important-note">
+                    <strong>Prerequisites:</strong> Include dependencies (e.g., via Maven/Gradle) for `com.microsoft.azure:msal4j`, `software.amazon.awssdk:s3`, `com.fasterxml.jackson.core:jackson-databind` (or Gson), `org.apache.commons:commons-csv`. Configure AWS Credentials. Grant Netcore S3 read access. Fill in ALL placeholders. Implement full MSAL auth flow.
+                </div>
+               <pre><code class="language-java">// --- Java Bulk Export/Upload Conceptual Code ---
+// Requires Java 11+
+// Add dependencies for: MSAL4J, AWS SDK S3 (v2), Jackson/Gson, Apache Commons CSV
+
+import java.io.*;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.*;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
+// MSAL
+import com.microsoft.aad.msal4j.*;
+// AWS S3
+import software.amazon.awssdk.auth.credentials.*; // For credentials provider
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.core.sync.RequestBody;
+// Jackson JSON
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+// Apache Commons CSV
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+
+
+public class DynamicsBulkToNetcore {
+
+    // --- Configuration (REPLACE ALL PLACEHOLDERS!) ---
+    private static final String DYNAMICS_API_ENDPOINT = "https://yourorg.api.crm[X].dynamics.com/api/data/v9.2/"; // &lt;&lt;&lt; REPLACE
+    private static final String AZURE_TENANT_ID = "YOUR_AZURE_TENANT_ID"; // &lt;&lt;&lt; REPLACE
+    private static final String DYNAMICS_CLIENT_ID = "YOUR_APP_CLIENT_ID"; // &lt;&lt;&lt; REPLACE
+    private static final String DYNAMICS_CLIENT_SECRET = "YOUR_APP_CLIENT_SECRET"; // &lt;&lt;&lt; REPLACE (Keep Secure!)
+    private static final String DYNAMICS_SCOPE = DYNAMICS_API_ENDPOINT.replace("/api/data/v9.2/", "") + "/.default";
+    private static final String DYNAMICS_ENTITY_PLURAL_NAME = "contacts";
+    private static final String DYNAMICS_FIELDS_SELECT = "firstname,lastname,emailaddress1,mobilephone"; // &lt;&lt;&lt; REPLACE/VERIFY
+    private static final String DYNAMICS_FILTER = "statecode eq 0"; // Optional filter
+
+    private static final String S3_BUCKET_NAME = "your-s3-bucket-for-netcore"; // &lt;&lt;&lt; REPLACE
+    private static final String S3_REGION_ID = "your-aws-region"; // &lt;&lt;&lt; REPLACE (e.g., "us-east-1")
+    private static final String S3_FOLDER_PATH = "netcore_exports/";
+
+    private static final String NETCORE_API_KEY = "YOUR_NETCORE_API_KEY"; // &lt;&lt;&lt; REPLACE
+    private static final String NETCORE_LIST_ID = "YOUR_NETCORE_LIST_ID"; // &lt;&lt;&lt; REPLACE
+    private static final String NETCORE_NOTIFY_EMAIL = "your_email@example.com"; // &lt;&lt;&lt; REPLACE or null
+    private static final String NETCORE_CALLBACK_URL = null; // &lt;&lt;&lt; REPLACE or null
+    private static final String NETCORE_BULK_API_URL = "https://api.netcoresmartech.com/apiv2";
+
+    // --- Shared Clients / State ---
+    private static final HttpClient httpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(20)).build();
+    private static final ObjectMapper jsonMapper = new ObjectMapper(); // Jackson JSON Mapper
+    private static IAuthenticationResult dynamicsAuthResult = null; // Cache token
+
+    // --- Function to Get Dynamics Access Token (Conceptual - Needs full MSAL error handling) ---
+    private static synchronized String getDynamicsAccessToken() throws Exception {
+        Instant now = Instant.now();
+        // Check cache (with 5 min buffer)
+        if (dynamicsAuthResult != null &amp;&amp; dynamicsAuthResult.expiresOnDate().toInstant().isAfter(now.plus(5, ChronoUnit.MINUTES))) {
+            System.out.println("Using existing Dynamics token.");
+            return dynamicsAuthResult.accessToken();
+        }
+
+        System.out.println("Acquiring new Dynamics access token...");
+        String authority = "https://login.microsoftonline.com/" + AZURE_TENANT_ID;
+        IClientCredential credential = ClientCredentialFactory.createFromSecret(DYNAMICS_CLIENT_SECRET);
+        ConfidentialClientApplication cca = ConfidentialClientApplication.builder(DYNAMICS_CLIENT_ID, credential)
+                .authority(authority)
+                .build();
+        ClientCredentialParameters params = ClientCredentialParameters.builder(Collections.singleton(DYNAMICS_SCOPE)).build();
+
+        CompletableFuture&lt;IAuthenticationResult&gt; future = cca.acquireToken(params);
+        dynamicsAuthResult = future.join(); // Block for simplicity in example
+        if (dynamicsAuthResult != null &amp;&amp; dynamicsAuthResult.accessToken() != null) {
+             System.out.println("Successfully acquired token, expires: " + dynamicsAuthResult.expiresOnDate());
+             return dynamicsAuthResult.accessToken();
+        } else {
+             System.err.println("Failed to acquire token."); dynamicsAuthResult = null; return null;
+        }
+        // Add proper try-catch for ExecutionException, InterruptedException
+    }
+
+    // --- Function to Fetch Data from Dynamics with Pagination ---
+    private static List&lt;Map&lt;String, Object&gt;&gt; fetchAllDynamicsContacts(String selectFields, String filterQuery) throws Exception {
+        List&lt;Map&lt;String, Object&gt;&gt; allContacts = new ArrayList&lt;&gt;();
+        String query = "$select=" + selectFields;
+        if (filterQuery != null &amp;&amp; !filterQuery.isBlank()) { query += "&amp;$filter=" + filterQuery; } // Use &amp;
+        String fetchUrl = DYNAMICS_API_ENDPOINT + DYNAMICS_ENTITY_PLURAL_NAME + "?" + query;
+        int pageCount = 0;
+
+        while (fetchUrl != null) {
+            pageCount++; String token = getDynamicsAccessToken(); if (token == null) throw new RuntimeException("Auth failed.");
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(fetchUrl))
+                .header("Authorization", "Bearer " + token).header("Accept", "application/json")
+                .header("OData-MaxVersion", "4.0").header("OData-Version", "4.0")
+                .header("Prefer", "odata.maxpagesize=1000,odata.include-annotations=\"*\"")
+                .GET().timeout(Duration.ofSeconds(60)).build();
+
+            System.out.println("Fetching Dynamics page " + pageCount + "...");
+            HttpResponse&lt;String&gt; response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() &lt; 200 || response.statusCode() &gt;= 300) throw new RuntimeException("Dynamics fetch failed: " + response.statusCode());
+
+            JsonNode root = jsonMapper.readTree(response.body());
+            JsonNode valueNode = root.path("value");
+            int count = 0;
+            if (valueNode.isArray()) {
+                List&lt;Map&lt;String, Object&gt;&gt; pageData = jsonMapper.convertValue(valueNode, new TypeReference&lt;&gt;() {});
+                allContacts.addAll(pageData);
+                count = pageData.size();
+            }
+            System.out.println(" Fetched " + count + ". Total: " + allContacts.size());
+            fetchUrl = root.has("@odata.nextLink") ? root.get("@odata.nextLink").asText() : null;
+             System.out.println(fetchUrl != null ? " Next page found." : " No more pages.");
+        }
+        System.out.println("--- Finished Dynamics fetch. Total records: " + allContacts.size() + " ---");
+        return allContacts;
+    }
+
+    // --- Function to Write Data to CSV ---
+    private static boolean writeContactsToCsv(List&lt;Map&lt;String, Object&gt;&gt; contacts, String filename, Map&lt;String, String&gt; fieldMap) {
+        if (contacts == null || contacts.isEmpty()) return false;
+        String[] headers = fieldMap.keySet().toArray(new String[0]);
+        CSVFormat csvFormat = CSVFormat.DEFAULT.builder().setHeader(headers).build();
+        int rowsWritten = 0;
+        System.out.println("Writing " + contacts.size() + " records to " + filename);
+        try (FileWriter out = new FileWriter(filename, StandardCharsets.UTF_8);
+             CSVPrinter printer = new CSVPrinter(out, csvFormat)) {
+            for (Map&lt;String, Object&gt; contact : contacts) {
+                List&lt;String&gt; record = new ArrayList&lt;&gt;();
+                boolean hasEmail = false;
+                for (String header : headers) {
+                    String dynamicsField = fieldMap.get(header);
+                    Object value = contact.get(dynamicsField);
+                    record.add(value != null ? String.valueOf(value) : "");
+                    if ("EMAIL".equals(header) &amp;&amp; value != null &amp;&amp; !String.valueOf(value).isBlank()) hasEmail = true;
+                }
+                 if (!hasEmail) { System.out.println("Skipping record without EMAIL..."); continue; } // Basic validation
+                 printer.printRecord(record); rowsWritten++;
+            }
+            System.out.println("Wrote " + rowsWritten + " valid records.");
+            return rowsWritten > 0;
+        } catch (IOException e) { System.err.println("ERROR writing CSV " + filename + ": " + e); return false; }
+    }
+
+    // --- Function to Upload CSV to S3 ---
+    private static boolean uploadCsvToS3(String localFilename, String bucket, String s3Key) {
+        System.out.println("Uploading " + localFilename + " to S3 s3://" + bucket + "/" + s3Key);
+        // Ensure AWS credentials configured (e.g., Environment variables, default profile)
+        try {
+             Region region = Region.of(S3_REGION_ID);
+             S3Client s3 = S3Client.builder().region(region).credentialsProvider(DefaultCredentialsProvider.create()).build();
+             PutObjectRequest putOb = PutObjectRequest.builder().bucket(bucket).key(s3Key).build();
+             s3.putObject(putOb, RequestBody.fromFile(new File(localFilename)));
+             System.out.println("S3 Upload successful."); return true;
+        } catch (S3Exception e) { System.err.println("ERROR uploading to S3: " + e.awsErrorDetails().errorMessage()); return false; }
+         catch (Exception e) { System.err.println("ERROR during S3 upload: " + e); return false; }
+    }
+
+    // --- Function to Trigger Netcore Bulk API ---
+    private static boolean triggerNetcoreBulkUpload(String s3FilePath) {
+        System.out.println("Triggering Netcore bulk upload for S3 path: " + s3FilePath);
+        try {
+            Map&lt;String, String&gt; params = new LinkedHashMap&lt;&gt;(); // Use LinkedHashMap to preserve order if needed
+            params.put("type", "contact"); params.put("activity", "bulkupload"); params.put("apikey", NETCORE_API_KEY);
+            params.put("path", s3FilePath); params.put("listid", NETCORE_LIST_ID);
+            if (NETCORE_NOTIFY_EMAIL != null) params.put("notifyemail", NETCORE_NOTIFY_EMAIL);
+            if (NETCORE_CALLBACK_URL != null) params.put("callback", NETCORE_CALLBACK_URL); // Assumes URL doesn't need encoding here, verify
+
+            String query = params.entrySet().stream()
+                .map(p -> p.getKey() + "=" + URLEncoder.encode(p.getValue(), StandardCharsets.UTF_8))
+                .collect(Collectors.joining("&amp;"));
+            String fullUrl = NETCORE_BULK_API_URL + "?" + query;
+
+            System.out.println("Calling Netcore API: " + fullUrl);
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(fullUrl)).GET().timeout(Duration.ofSeconds(45)).build();
+            HttpResponse&lt;String&gt; response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            System.out.println("Netcore API Status Code: " + response.statusCode()); System.out.println("Netcore Response:"); System.out.println(response.body());
+            if (response.statusCode() &lt; 200 || response.statusCode() &gt;= 300) throw new RuntimeException("Netcore API call failed: " + response.statusCode());
+            // TODO: Parse response JSON to confirm job submission
+            return true;
+        } catch (Exception e) { System.err.println("ERROR calling Netcore API: " + e); return false; }
+    }
+
+    // --- Main Execution Logic ---
+    public static void main(String[] args) {
+        Instant start = Instant.now(); System.out.println("--- Starting Process [" + start + "] ---");
+        Map&lt;String, String&gt; csvFieldMap = Map.of("EMAIL", "emailaddress1", "MOBILE", "mobilephone", "FIRST_NAME", "firstname", "LAST_NAME", "lastname"); // &lt;&lt;&lt; VERIFY
+        try {
+            List&lt;Map&lt;String, Object&gt;&gt; contacts = fetchAllDynamicsContacts(DYNAMICS_FIELDS_SELECT, DYNAMICS_FILTER);
+            if (contacts == null || contacts.isEmpty()) { System.out.println("FATAL: Failed or no data from Dynamics."); return; }
+
+            String timestamp = "" + System.currentTimeMillis(); // Simple timestamp
+            String localCsv = "dynamics_contacts_" + timestamp + ".csv";
+            if (!writeContactsToCsv(contacts, localCsv, csvFieldMap)) { System.out.println("FATAL: Failed writing CSV."); return; }
+
+            String s3Key = (S3_FOLDER_PATH != null ? S3_FOLDER_PATH : "") + "contacts_" + timestamp + ".csv";
+            boolean uploadOk = uploadCsvToS3(localCsv, S3_BUCKET_NAME, s3Key);
+
+            // Clean up local file
+            try { new File(localCsv).delete(); System.out.println("Removed local file: " + localCsv); } catch (Exception e) { System.err.println("Warn: Failed to remove " + localCsv);}
+
+            if (!uploadOk) { System.out.println("FATAL: Failed S3 upload."); return; }
+
+            if (!triggerNetcoreBulkUpload(s3Key)) { System.err.println("ERROR: Failed Netcore trigger."); }
+            else { System.out.println("Process initiated. Check Netcore status."); }
+
+        } catch (Exception e) { System.err.println("FATAL ERROR in main process: " + e); e.printStackTrace(); }
+        finally { System.out.println("--- Process Finished. Duration: " + Duration.between(start, Instant.now()) + " ---"); }
+    }
+}
+
+                </code></pre>
+            </div>
+
+            <div id="javascript-content" class="tab-pane">
+                <h3>JavaScript (Node.js) Conceptual Example</h3>
+                <p>Uses `node-fetch` (or `axios`) for HTTP, `@azure/msal-node` for auth, `csv-writer` for CSV, `@aws-sdk/client-s3` for S3.</p>
+                 <div class="important-note">
+                    <strong>Prerequisites:</strong> `npm install node-fetch @azure/msal-node @aws-sdk/client-s3 csv-writer`. Configure AWS Credentials. Grant Netcore S3 read access. Fill in ALL placeholders. Implement full MSAL auth flow. Use async/await correctly.
+                </div>
+                <pre><code class="language-javascript">// --- Node.js Bulk Export/Upload Conceptual Code ---
+// Requires: npm install node-fetch @azure/msal-node @aws-sdk/client-s3 csv-writer
+// Use ESM: import fetch from 'node-fetch'; import { S3Client ...} from ...; etc.
+const fetch = require('node-fetch');
+const { ConfidentialClientApplication } = require('@azure/msal-node');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3'); // AWS SDK v3
+const { createObjectCsvWriter } = require('csv-writer'); // Or another CSV lib
+const fs = require('fs').promises; // For async file operations
+const path = require('path');
+const { URLSearchParams } = require('url'); // For Netcore params
+
+// --- Configuration (REPLACE ALL PLACEHOLDERS!) ---
+const DYNAMICS_API_ENDPOINT = "https://yourorg.api.crm[X].dynamics.com/api/data/v9.2/"; // &lt;&lt;&lt; REPLACE
+const AZURE_TENANT_ID = "YOUR_AZURE_TENANT_ID"; // &lt;&lt;&lt; REPLACE
+const DYNAMICS_CLIENT_ID = "YOUR_APP_CLIENT_ID"; // &lt;&lt;&lt; REPLACE
+const DYNAMICS_CLIENT_SECRET = "YOUR_APP_CLIENT_SECRET"; // &lt;&lt;&lt; REPLACE (Keep Secure!)
+const DYNAMICS_SCOPE = [`${DYNAMICS_API_ENDPOINT.replace('/api/data/v9.2/', '')}/.default`];
+const DYNAMICS_ENTITY_PLURAL_NAME = "contacts";
+const DYNAMICS_FIELDS_SELECT = "firstname,lastname,emailaddress1,mobilephone"; // &lt;&lt;&lt; REPLACE/VERIFY
+const DYNAMICS_FILTER = "statecode eq 0"; // Optional filter
+
+const S3_BUCKET_NAME = "your-s3-bucket-for-netcore"; // &lt;&lt;&lt; REPLACE
+const S3_REGION = "your-aws-region"; // &lt;&lt;&lt; REPLACE
+const S3_FOLDER_PATH = "netcore_exports/";
+
+const NETCORE_API_KEY = "YOUR_NETCORE_API_KEY"; // &lt;&lt;&lt; REPLACE
+const NETCORE_LIST_ID = "YOUR_NETCORE_LIST_ID"; // &lt;&lt;&lt; REPLACE
+const NETCORE_NOTIFY_EMAIL = "your_email@example.com"; // &lt;&lt;&lt; REPLACE or null
+const NETCORE_CALLBACK_URL = null; // &lt;&lt;&lt; REPLACE or null
+const NETCORE_BULK_API_URL = "https://api.netcoresmartech.com/apiv2";
+
+let dynamicsAccessToken = null;
+let tokenExpiryTime = 0;
+
+// --- Function to Get Dynamics Access Token (Conceptual - Needs full MSAL error handling) ---
+async function getDynamicsAccessToken() {
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (dynamicsAccessToken &amp;&amp; currentTime &lt; (tokenExpiryTime - 300)) { return dynamicsAccessToken; }
+    console.log("Acquiring new Dynamics access token...");
+    // Replace with full MSAL implementation using ConfidentialClientApplication
+    // const msalConfig = { auth: { clientId: DYNAMICS_CLIENT_ID, authority: `...${AZURE_TENANT_ID}`, clientSecret: DYNAMICS_CLIENT_SECRET } };
+    // const cca = new ConfidentialClientApplication(msalConfig);
+    // const clientCredentialRequest = { scopes: DYNAMICS_SCOPE };
+    // try { const response = await cca.acquireTokenByClientCredential(clientCredentialRequest); ... set token/expiry ...} catch(e){...}
+    console.log("!!! Skipping Real Authentication - Returning Placeholder Token !!!");
+    dynamicsAccessToken = "PLACEHOLDER_TOKEN"; tokenExpiryTime = currentTime + 3600; return dynamicsAccessToken;
+}
+
+// --- Function to Fetch Data from Dynamics with Pagination ---
+async function fetchAllDynamicsContacts(selectFields, filterQuery = null) {
+    const allContacts = []; let pageCount = 0;
+    let query = `$select=${selectFields}`;
+    if (filterQuery) query += `&amp;$filter=${filterQuery}`; // Use &amp;
+    let fetchUrl = `${DYNAMICS_API_ENDPOINT}${DYNAMICS_ENTITY_PLURAL_NAME}?${query}`;
+
+    while (fetchUrl) {
+        pageCount++; const token = await getDynamicsAccessToken(); if (!token) throw new Error("Auth failed.");
+        if (token === "PLACEHOLDER_TOKEN" &amp;&amp; pageCount > 1) break; // Stop simulation
+        if (token === "PLACEHOLDER_TOKEN") { // Simulate data
+             console.log("SIMULATING Dynamics Fetch - Returning fake data");
+             return [{"firstname":"SimFn1","lastname":"SimLn1","emailaddress1":"sim1@test.com","mobilephone":"111"},
+                     {"firstname":"SimFn2","lastname":"SimLn2","emailaddress1":"sim2@test.com","mobilephone":"222"}];
+        }
+        const headers = {'Authorization':`Bearer ${token}`, 'Accept':'application/json', 'OData-MaxVersion':'4.0', 'OData-Version':'4.0', 'Prefer':'odata.maxpagesize=1000,odata.include-annotations="*"'};
+        console.log(`Workspaceing Dynamics page ${pageCount}...`);
+        try {
+            const response = await fetch(fetchUrl, { headers, timeout: 60000 });
+            if (!response.ok) throw new Error(`Dynamics fetch failed: ${response.status} ${response.statusText}`);
+            const data = await response.json();
+            const records = data?.value || []; allContacts.push(...records); console.log(` Fetched ${records.length}. Total: ${allContacts.length}`);
+            fetchUrl = data['@odata.nextLink']; console.log(fetchUrl ? " Next page found." : " No more pages.");
+        } catch (error) { console.error(`ERROR fetching page ${pageCount}: ${error}`); throw error; } // Rethrow or handle
+    }
+    console.log(`--- Finished Dynamics fetch. Total records: ${allContacts.length} ---`); return allContacts;
+}
+
+// --- Function to Write Data to CSV ---
+async function writeContactsToCsv(contacts, filename, fieldMap) {
+    if (!contacts || contacts.length === 0) { console.log("No contacts to write."); return false; }
+    const header = Object.keys(fieldMap).map(key => ({ id: key, title: key })); // csv-writer header format
+    const csvWriter = createObjectCsvWriter({ path: filename, header: header });
+    console.log(`Writing ${contacts.length} records to ${filename}`);
+    let rowsToWrite = []; let validRowCount = 0;
+    for (const contact of contacts) {
+        const row = {}; let hasEmail = false;
+        for (const [csvHeader, dynamicsField] of Object.entries(fieldMap)) {
+            const value = contact[dynamicsField] ?? ""; // Default to empty string
+            row[csvHeader] = value;
+            if (csvHeader === "EMAIL" &amp;&amp; value) hasEmail = true;
+        }
+         if (!hasEmail) { console.log("Skipping record without EMAIL..."); continue; } // Basic validation
+         rowsToWrite.push(row); validRowCount++;
+    }
+    try {
+        await csvWriter.writeRecords(rowsToWrite); console.log(`Wrote ${validRowCount} valid records.`); return validRowCount > 0;
+    } catch (error) { console.error(`ERROR writing CSV ${filename}: ${error}`); return false; }
+}
+
+// --- Function to Upload CSV to S3 ---
+async function uploadCsvToS3(localFilename, bucket, s3Key) {
+    console.log(`Uploading ${localFilename} to S3 s3://${bucket}/${s3Key}`);
+    try {
+        // Ensure AWS credentials configured (env vars, ~/.aws/credentials, IAM role)
+        const s3Client = new S3Client({ region: S3_REGION });
+        const fileStream = await fs.readFile(localFilename); // Read file content
+        const uploadParams = { Bucket: bucket, Key: s3Key, Body: fileStream };
+        await s3Client.send(new PutObjectCommand(uploadParams));
+        console.log("S3 Upload successful."); return true;
+    } catch (error) { console.error(`ERROR uploading to S3: ${error}`); return false; }
+}
+
+// --- Function to Trigger Netcore Bulk API ---
+async function triggerNetcoreBulkUpload(s3FilePath) {
+    console.log(`Triggering Netcore bulk upload for S3 path: ${s3FilePath}`);
+    const params = new URLSearchParams({ // Use URLSearchParams for easy query string building
+        type: 'contact', activity: 'bulkupload', apikey: NETCORE_API_KEY, path: s3FilePath, listid: NETCORE_LIST_ID
+    });
+    if (NETCORE_NOTIFY_EMAIL) params.append('notifyemail', NETCORE_NOTIFY_EMAIL);
+    if (NETCORE_CALLBACK_URL) params.append('callback', NETCORE_CALLBACK_URL); // URLSearchParams handles encoding
+
+    const url = `${NETCORE_BULK_API_URL}?${params.toString()}`;
+    console.log(`Calling Netcore API: ${url}`);
+    try {
+        const response = await fetch(url, { method: 'GET', timeout: 45000 }); // node-fetch timeout is in ms
+        const responseText = await response.text();
+        console.log(`Netcore API Status Code: ${response.status} ${response.statusText}`);
+        console.log("Netcore Response:", responseText);
+        if (!response.ok) throw new Error(`Netcore API Error: ${response.status}`);
+        // TODO: Parse responseText JSON to confirm job submission
+        return true;
+    } catch (error) { console.error(`ERROR calling Netcore API: ${error}`); return false; }
+}
+
+// --- Main Execution Logic ---
+async function main() {
+    const start = Date.now(); console.log(`--- Starting Process [${new Date().toISOString()}] ---`);
+    const csvFieldMap = {"EMAIL":"emailaddress1","MOBILE":"mobilephone","FIRST_NAME":"firstname","LAST_NAME":"lastname"}; // <<< VERIFY
+    try {
+        const contacts = await fetchAllDynamicsContacts(DYNAMICS_FIELDS_SELECT, DYNAMICS_FILTER);
+        if (!contacts || contacts.length === 0) { console.log("FATAL: Failed or no data from Dynamics."); return; }
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const localCsv = path.join(__dirname, `dynamics_contacts_${timestamp}.csv`); // Use path.join
+        if (!await writeContactsToCsv(contacts, localCsv, csvFieldMap)) { console.log("FATAL: Failed writing CSV."); return; }
+
+        const s3Key = `${S3_FOLDER_PATH || ''}contacts_${timestamp}.csv`;
+        const uploadOk = await uploadCsvToS3(localCsv, S3_BUCKET_NAME, s3Key);
+
+        try { await fs.unlink(localCsv); console.log(`Removed local file: ${localCsv}`); } catch (e) { console.warn(`Warn: Failed to remove ${localCsv}`);}
+        if (!uploadOk) { console.log("FATAL: Failed S3 upload."); return; }
+
+        if (!await triggerNetcoreBulkUpload(s3Key)) { console.error("ERROR: Failed Netcore trigger."); }
+        else { console.log("Process initiated. Check Netcore status."); }
+
+    } catch (error) { console.error("FATAL ERROR in main process:", error); }
+    finally { console.log(`--- Process Finished. Duration: ${(Date.now() - start) / 1000}s ---`); }
+}
+
+main(); // Run the main async function
+
+                </code></pre>
+            </div>
+
+            <div id="csharp-content" class="tab-pane">
+                <h3>C# Conceptual Example</h3>
+                <p>Uses `HttpClient`, `System.Text.Json`, `Microsoft.Identity.Client` (MSAL.NET) for auth, `AWSSDK.S3` for S3, and optionally `CsvHelper` for CSV writing.</p>
+                 <div class="important-note">
+                    <strong>Prerequisites:</strong> Add NuGet packages: `Microsoft.Identity.Client`, `AWSSDK.Core`, `AWSSDK.S3`, optionally `CsvHelper`. Configure AWS Credentials. Grant Netcore S3 read access. Fill in ALL placeholders. Implement full MSAL auth flow. Use async/await correctly.
+                </div>
+                <pre><code class="language-csharp">// --- C# Bulk Export/Upload Conceptual Code ---
+// Requires NuGet Packages: Microsoft.Identity.Client, AWSSDK.Core, AWSSDK.S3, (Optional: CsvHelper)
+// Requires .NET Core / .NET 5+ for modern HttpClient and System.Text.Json features
+
+using System;
+using System.Collections.Generic;
+using System.Globalization; // For CsvHelper culture
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Threading; // For CancellationToken
+using System.Threading.Tasks;
+using System.Web; // For HttpUtility.ParseQueryString / UrlEncode in older .NET, or use custom parsing
+
+// MSAL
+using Microsoft.Identity.Client;
+// AWS SDK
+using Amazon; // For RegionEndpoint
+using Amazon.S3;
+using Amazon.S3.Model;
+using Amazon.Runtime; // For AWSCredentials/AssumeRole
+// CSV Helper (Optional) - Add NuGet Package: CsvHelper
+// using CsvHelper;
+// using CsvHelper.Configuration;
+
+public class DynamicsBulkToNetcoreCSharp
+{
+    // --- Configuration (REPLACE ALL PLACEHOLDERS!) ---
+    private static readonly string DynamicsApiEndpoint = "https://yourorg.api.crm[X].dynamics.com/api/data/v9.2/"; // &lt;&lt;&lt; REPLACE
+    private static readonly string AzureTenantId = "YOUR_AZURE_TENANT_ID"; // &lt;&lt;&lt; REPLACE
+    private static readonly string DynamicsClientId = "YOUR_APP_CLIENT_ID"; // &lt;&lt;&lt; REPLACE
+    private static readonly string DynamicsClientSecret = "YOUR_APP_CLIENT_SECRET"; // &lt;&lt;&lt; REPLACE (Keep Secure!)
+    private static readonly string[] DynamicsScope = new[] { $"{DynamicsApiEndpoint.Replace("/api/data/v9.2/", "")}/.default" };
+    private static readonly string DynamicsEntityPluralName = "contacts";
+    private static readonly string DynamicsFieldsSelect = "firstname,lastname,emailaddress1,mobilephone"; // &lt;&lt;&lt; REPLACE/VERIFY
+    private static readonly string DynamicsFilter = "statecode eq 0"; // Optional filter
+
+    private static readonly string S3BucketName = "your-s3-bucket-for-netcore"; // &lt;&lt;&lt; REPLACE
+    private static readonly string S3RegionSystemName = "your-aws-region"; // &lt;&lt;&lt; REPLACE (e.g., "us-east-1")
+    private static readonly string S3FolderPath = "netcore_exports/";
+
+    private static readonly string NetcoreApiKey = "YOUR_NETCORE_API_KEY"; // &lt;&lt;&lt; REPLACE
+    private static readonly string NetcoreListId = "YOUR_NETCORE_LIST_ID"; // &lt;&lt;&lt; REPLACE
+    private static readonly string NetcoreNotifyEmail = "your_email@example.com"; // &lt;&lt;&lt; REPLACE or null
+    private static readonly string NetcoreCallbackUrl = null; // &lt;&lt;&lt; REPLACE or null
+    private static readonly string NetcoreBulkApiUrl = "https://api.netcoresmartech.com/apiv2";
+
+    // --- Shared Clients / State ---
+    private static readonly HttpClient httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(2) }; // Longer timeout for API calls
+    private static AuthenticationResult dynamicsAuthResult = null; // Cache token
+
+    // --- Function to Get Dynamics Access Token (Conceptual - Needs full MSAL error handling) ---
+    private static async Task&lt;string&gt; GetDynamicsAccessTokenAsync()
+    {
+        // Check cache (with 5 min buffer)
+        if (dynamicsAuthResult != null &amp;&amp; dynamicsAuthResult.ExpiresOn > DateTimeOffset.UtcNow.AddMinutes(5)) {
+            Console.WriteLine("Using existing Dynamics token."); return dynamicsAuthResult.AccessToken;
+        }
+        Console.WriteLine("Acquiring new Dynamics access token...");
+        // Replace with full MSAL implementation using IConfidentialClientApplication
+        // var app = ConfidentialClientApplicationBuilder.Create(DynamicsClientId)...Build();
+        // dynamicsAuthResult = await app.AcquireTokenForClient(DynamicsScope).ExecuteAsync(); ... return token or throw ...
+        Console.WriteLine("!!! Skipping Real Authentication - Returning Placeholder Token !!!"); dynamicsAuthResult = null; // Invalidate cache on sim
+        return await Task.FromResult("PLACEHOLDER_TOKEN"); // Placeholder
+    }
+
+    // --- Function to Fetch Data from Dynamics with Pagination ---
+    private static async Task&lt;List&lt;JsonElement&gt;&gt; FetchAllDynamicsContactsAsync(string selectFields, string filterQuery = null)
+    {
+        var allContacts = new List&lt;JsonElement&gt;(); string pageCount = "0";
+        string query = $"?$select={selectFields}";
+        if (!string.IsNullOrEmpty(filterQuery)) query += $"&amp;$filter={filterQuery}"; // Use &amp;
+        string fetchUrl = $"{DynamicsApiEndpoint}{DynamicsEntityPluralName}{query}";
+
+        while (!string.IsNullOrEmpty(fetchUrl)) {
+            pageCount = (int.Parse(pageCount) + 1).ToString(); string token = await GetDynamicsAccessTokenAsync(); if (token == null) throw new Exception("Auth failed.");
+            if (token == "PLACEHOLDER_TOKEN" &amp;&amp; pageCount != "1") break; // Stop sim
+            if (token == "PLACEHOLDER_TOKEN") { // Simulate data
+                 Console.WriteLine("SIMULATING Dynamics Fetch - Returning fake data");
+                 // Create fake JsonElement list (more complex than Python dict)
+                 string fakeJson = @"[{""firstname"":""SimFn1"",""lastname"":""SimLn1"",""emailaddress1"":""sim1@test.com"",""mobilephone"":""111""},{""firstname"":""SimFn2"",""lastname"":""SimLn2"",""emailaddress1"":""sim2@test.com"",""mobilephone"":""222""}]";
+                 using JsonDocument fakeDoc = JsonDocument.Parse(fakeJson); return fakeDoc.RootElement.Clone().EnumerateArray().ToList();
+            }
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, fetchUrl);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            request.Headers.Add("OData-MaxVersion", "4.0"); request.Headers.Add("OData-Version", "4.0");
+            request.Headers.Add("Prefer", "odata.maxpagesize=1000,odata.include-annotations=\"*\"");
+            Console.WriteLine($"Fetching Dynamics page {pageCount}..."); // Log URL carefully if sensitive
+            try {
+                HttpResponseMessage response = await httpClient.SendAsync(request); response.EnsureSuccessStatusCode();
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+                using JsonDocument document = JsonDocument.Parse(jsonResponse); JsonElement root = document.RootElement.Clone(); // Clone to keep after dispose
+                var records = root.GetProperty("value").EnumerateArray().ToList(); allContacts.AddRange(records);
+                Console.WriteLine($" Fetched {records.Count}. Total: {allContacts.Count}");
+                fetchUrl = root.TryGetProperty("@odata.nextLink", out JsonElement nextLink) ? nextLink.GetString() : null;
+                Console.WriteLine(fetchUrl != null ? " Next page found." : " No more pages.");
+            } catch (Exception ex) { Console.Error.WriteLine($"ERROR fetching page {pageCount}: {ex.Message}"); throw; } // Rethrow or handle
+        }
+        Console.WriteLine($"--- Finished Dynamics fetch. Total records: {allContacts.Count} ---"); return allContacts;
+    }
+
+     // --- Function to Write Data to CSV ---
+    private static bool WriteContactsToCsv(List&lt;JsonElement&gt; contacts, string filename, Dictionary&lt;string, string&gt; fieldMap) {
+        if (contacts == null || !contacts.Any()) return false;
+        var headers = fieldMap.Keys.ToList(); int rowsWritten = 0;
+        Console.WriteLine($"Writing {contacts.Count} records to {filename}");
+        try { // Using basic StreamWriter - CsvHelper library is recommended for robustness
+            using (var writer = new StreamWriter(filename, false, System.Text.Encoding.UTF8)) {
+                writer.WriteLine(string.Join(",", headers)); // Write header
+                foreach (var contactElement in contacts) {
+                    var record = new List&lt;string&gt;(); bool hasEmail = false;
+                    foreach (var header in headers) {
+                        string dynamicsField = fieldMap[header];
+                        string value = contactElement.TryGetProperty(dynamicsField, out JsonElement prop) &amp;&amp; prop.ValueKind == JsonValueKind.String ? prop.GetString() ?? "" : "";
+                         // Basic CSV escaping (simplistic - CsvHelper handles this better)
+                        value = $"\"{value.Replace("\"", "\"\"")}\"";
+                        record.Add(value);
+                        if (header == "EMAIL" &amp;&amp; !string.IsNullOrEmpty(prop.GetString())) hasEmail = true;
+                    }
+                     if (!hasEmail) { Console.WriteLine("Skipping record without EMAIL..."); continue; }
+                     writer.WriteLine(string.Join(",", record)); rowsWritten++;
+                }
+            } Console.WriteLine($"Wrote {rowsWritten} valid records."); return rowsWritten > 0;
+        } catch (Exception ex) { Console.Error.WriteLine($"ERROR writing CSV {filename}: {ex.Message}"); return false; }
+    }
+
+     // --- Function to Upload CSV to S3 ---
+     private static async Task&lt;bool&gt; UploadCsvToS3Async(string localFilename, string bucket, string s3Key) {
+        Console.WriteLine($"Uploading {localFilename} to S3 s3://{bucket}/{s3Key}");
+        try {
+            // Ensure AWS credentials configured (IAM role, env vars, profile)
+            var region = RegionEndpoint.GetBySystemName(S3RegionSystemName);
+            // Use DefaultAWSCredentials() or other providers as needed
+            using (var s3Client = new AmazonS3Client(region)) { // Or provide credentials explicitly
+                var putRequest = new PutObjectRequest { BucketName = bucket, Key = s3Key, FilePath = localFilename };
+                await s3Client.PutObjectAsync(putRequest);
+            } Console.WriteLine("S3 Upload successful."); return true;
+        } catch (AmazonS3Exception e) { Console.Error.WriteLine($"ERROR uploading to S3 (S3Exception): {e.Message}"); return false; }
+         catch (Exception e) { Console.Error.WriteLine($"ERROR during S3 upload: {e.Message}"); return false; }
+     }
+
+     // --- Function to Trigger Netcore Bulk API ---
+     private static async Task&lt;bool&gt; TriggerNetcoreBulkUploadAsync(string s3FilePath) {
+        Console.WriteLine($"Triggering Netcore bulk upload for S3 path: {s3FilePath}");
+        try {
+            var queryParams = HttpUtility.ParseQueryString(string.Empty); // Requires System.Web or custom parser
+            queryParams["type"] = "contact"; queryParams["activity"] = "bulkupload"; queryParams["apikey"] = NetcoreApiKey;
+            queryParams["path"] = s3FilePath; queryParams["listid"] = NetcoreListId;
+            if (!string.IsNullOrEmpty(NetcoreNotifyEmail)) queryParams["notifyemail"] = NetcoreNotifyEmail;
+            if (!string.IsNullOrEmpty(NetcoreCallbackUrl)) queryParams["callback"] = NetcoreCallbackUrl; // Assumes encoding not needed here
+
+            string fullUrl = $"{NetcoreBulkApiUrl}?{queryParams.ToString()}"; // May need custom joiner if not using System.Web
+            Console.WriteLine($"Calling Netcore API: {fullUrl}");
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, fullUrl);
+            HttpResponseMessage response = await httpClient.SendAsync(request);
+
+            string responseBody = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Netcore API Status Code: {(int)response.StatusCode}"); Console.WriteLine($"Netcore Response: {responseBody}");
+            response.EnsureSuccessStatusCode(); // Throw on non-2xx
+             // TODO: Parse responseBody JSON to confirm job submission
+             return true;
+        } catch (Exception ex) { Console.Error.WriteLine($"ERROR calling Netcore API: {ex.Message}"); return false; }
+    }
+
+     // --- Main Execution Logic ---
+    public static async Task Main(string[] args) {
+        var start = DateTime.UtcNow; Console.WriteLine($"--- Starting Process [{start:O}] ---");
+        var csvFieldMap = new Dictionary&lt;string, string&gt; { // &lt;&lt;&lt; VERIFY
+            {"EMAIL", "emailaddress1"}, {"MOBILE", "mobilephone"}, {"FIRST_NAME", "firstname"}, {"LAST_NAME", "lastname"}
+        };
+        List&lt;JsonElement&gt; contacts = null; bool success = false; string localCsv = null; string s3Key = null;
+        try {
+             contacts = await FetchAllDynamicsContactsAsync(DynamicsFieldsSelect, DynamicsFilter);
+             if (contacts == null || !contacts.Any()) { Console.WriteLine("FATAL: Failed or no data from Dynamics."); return; }
+
+             string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss"); localCsv = $"dynamics_contacts_{timestamp}.csv";
+             if (!WriteContactsToCsv(contacts, localCsv, csvFieldMap)) { Console.WriteLine("FATAL: Failed writing CSV."); return; }
+
+             s3Key = $"{(string.IsNullOrEmpty(S3FolderPath) ? "" : S3FolderPath)}contacts_{timestamp}.csv";
+             if (!await UploadCsvToS3Async(localCsv, S3BucketName, s3Key)) { Console.WriteLine("FATAL: Failed S3 upload."); return; }
+             success = true; // Reached upload stage
+
+        } catch (Exception ex) { Console.Error.WriteLine($"FATAL ERROR during fetch/write/upload: {ex}"); }
+        finally {
+             if (localCsv != null &amp;&amp; File.Exists(localCsv)) { // Cleanup
+                 try { File.Delete(localCsv); Console.WriteLine($"Removed local file: {localCsv}"); } catch (Exception e) { Console.Warn($"Warn: Failed to remove {localCsv}");}
+             }
+        }
+        if (!success) return; // Exit if earlier steps failed
+
+        if (!await TriggerNetcoreBulkUploadAsync(s3Key)) { Console.Error.WriteLine("ERROR: Failed Netcore trigger."); }
+        else { Console.WriteLine("Process initiated. Check Netcore status."); }
+
+        Console.WriteLine($"--- Process Finished. Duration: {DateTime.UtcNow - start} ---");
+    }
+}
+                </code></pre>
+            </div>
+
+            <div id="php-content" class="tab-pane">
+                <h3>PHP Conceptual Example</h3>
+                <p>Uses cURL or Guzzle for HTTP, built-in JSON/CSV functions, requires an OAuth 2.0 library (like `league/oauth2-client`) or manual flow for auth, `aws/aws-sdk-php` for S3.</p>
+                 <div class="important-note">
+                    <strong>Prerequisites:</strong> `composer require aws/aws-sdk-php guzzlehttp/guzzle league/oauth2-client` (or similar OAuth library). Configure AWS Credentials. Grant Netcore S3 read access. Fill in ALL placeholders. **Implement a full, secure OAuth 2.0 Client Credentials flow for Dynamics authentication (complex in PHP without official MSAL).**
+                </div>
+                <pre><code class="language-php">&lt;?php
+// --- PHP Bulk Export/Upload Conceptual Code ---
+// Requires: composer require aws/aws-sdk-php guzzlehttp/guzzle league/oauth2-client (or handle OAuth manually)
+error_reporting(E_ALL); ini_set('display_errors', 1);
+
+require 'vendor/autoload.php'; // If using Composer
+
+use Aws\S3\S3Client;
+use Aws\Exception\AwsException;
+// Use Guzzle for HTTP requests (or cURL)
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Exception\RequestException;
+// Use League OAuth2 Client (Example - Adapt as needed)
+// use League\OAuth2\Client\Provider\GenericProvider; // Or Azure specific if available
+// use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
+
+// --- Configuration (REPLACE ALL PLACEHOLDERS!) ---
+$dynamicsApiEndpoint = "https://yourorg.api.crm[X].dynamics.com/api/data/v9.2/"; // &lt;&lt;&lt; REPLACE
+$azureTenantId = "YOUR_AZURE_TENANT_ID"; // &lt;&lt;&lt; REPLACE
+$dynamicsClientId = "YOUR_APP_CLIENT_ID"; // &lt;&lt;&lt; REPLACE
+$dynamicsClientSecret = "YOUR_APP_CLIENT_SECRET"; // &lt;&lt;&lt; REPLACE (Keep Secure!)
+$dynamicsScope = str_replace('/api/data/v9.2/', '', $dynamicsApiEndpoint) . '/.default';
+$dynamicsEntityPluralName = "contacts";
+$dynamicsFieldsSelect = "firstname,lastname,emailaddress1,mobilephone"; // &lt;&lt;&lt; REPLACE/VERIFY
+$dynamicsFilter = "statecode eq 0"; // Optional filter
+
+$s3BucketName = "your-s3-bucket-for-netcore"; // &lt;&lt;&lt; REPLACE
+$s3Region = "your-aws-region"; // &lt;&lt;&lt; REPLACE
+$s3FolderPath = "netcore_exports/"; // Include trailing slash
+
+$netcoreApiKey = "YOUR_NETCORE_API_KEY"; // &lt;&lt;&lt; REPLACE
+$netcoreListId = "YOUR_NETCORE_LIST_ID"; // &lt;&lt;&lt; REPLACE
+$netcoreNotifyEmail = "your_email@example.com"; // &lt;&lt;&lt; REPLACE or null
+$netcoreCallbackUrl = null; // &lt;&lt;&lt; REPLACE or null
+$netcoreBulkApiUrl = "https://api.netcoresmartech.com/apiv2";
+
+$dynamicsAccessToken = null; // Cache token (implement proper caching)
+
+// --- Function to Get Dynamics Access Token (Conceptual - HIGHLY SIMPLIFIED - Needs Real OAuth Lib/Flow) ---
+function getDynamicsAccessToken() {
+    global $dynamicsAccessToken, $azureTenantId, $dynamicsClientId, $dynamicsClientSecret, $dynamicsScope;
+    // Check cache (implement proper expiry check)
+    if ($dynamicsAccessToken) { echo "Using cached token (simplistic check)\n"; return $dynamicsAccessToken; }
+    echo "Acquiring new Dynamics access token (Conceptual - NEEDS OAUTH LIBRARY)...\n";
+    // --- !!! THIS IS NOT FUNCTIONAL OAUTH - USE league/oauth2-client or similar !!! ---
+    // Example concept using League OAuth2 Provider:
+    // $provider = new GenericProvider([
+    //    'clientId'                => $dynamicsClientId,
+    //    'clientSecret'            => $dynamicsClientSecret,
+    //    'urlAuthorize'            => "https://login.microsoftonline.com/$azureTenantId/oauth2/v2.0/authorize",
+    //    'urlAccessToken'          => "https://login.microsoftonline.com/$azureTenantId/oauth2/v2.0/token",
+    //    'urlResourceOwnerDetails' => '', // Not needed for client_credentials
+    //    'scopes'                  => $dynamicsScope
+    // ]);
+    // try { $accessToken = $provider->getAccessToken('client_credentials'); $dynamicsAccessToken = $accessToken->getToken(); return $dynamicsAccessToken; } catch (IdentityProviderException $e) { echo "OAuth Error: " . $e->getMessage(); return null; }
+    echo "!!! Skipping Real Authentication - Returning Placeholder Token !!!\n"; $dynamicsAccessToken = "PLACEHOLDER_TOKEN"; return $dynamicsAccessToken;
+}
+
+// --- Function to Fetch Data from Dynamics with Pagination ---
+function fetchAllDynamicsContacts($selectFields, $filterQuery = null) {
+    global $dynamicsApiEndpoint, $dynamicsEntityPluralName;
+    $allContacts = []; $pageCount = 0;
+    $query = '$select=' . $selectFields;
+    if ($filterQuery) $query .= '&amp;$filter=' . $filterQuery; // Use &amp;
+    $fetchUrl = $dynamicsApiEndpoint . $dynamicsEntityPluralName . "?" . $query;
+    $httpClient = new GuzzleClient(['timeout' => 60.0]); // Use Guzzle
+
+    while ($fetchUrl) {
+        $pageCount++; $token = getDynamicsAccessToken(); if (!$token) throw new Exception("Auth failed.");
+        if ($token === "PLACEHOLDER_TOKEN" &amp;&amp; $pageCount > 1) break; // Stop sim
+        if ($token === "PLACEHOLDER_TOKEN") { // Simulate data
+            echo "SIMULATING Dynamics Fetch - Returning fake data\n";
+            return [["firstname"=>"SimFn1","lastname"=>"SimLn1","emailaddress1"=>"sim1@test.com","mobilephone"=>"111"],["firstname"=>"SimFn2","lastname"=>"SimLn2","emailaddress1"=>"sim2@test.com","mobilephone"=>"222"]];
+        }
+        $headers = ['Authorization' => 'Bearer ' . $token, 'Accept' => 'application/json', 'OData-MaxVersion' => '4.0', 'OData-Version' => '4.0', 'Prefer' => 'odata.maxpagesize=1000,odata.include-annotations="*"'];
+        echo "Fetching Dynamics page $pageCount...\n"; // Log URL carefully
+        try {
+            $response = $httpClient->request('GET', $fetchUrl, ['headers' => $headers]);
+            $body = $response->getBody()->getContents(); $data = json_decode($body, true); if (json_last_error() !== JSON_ERROR_NONE) throw new Exception("JSON Decode Error");
+            $records = $data['value'] ?? []; $allContacts = array_merge($allContacts, $records); echo " Fetched " . count($records) . ". Total: " . count($allContacts) . "\n";
+            $fetchUrl = $data['@odata.nextLink'] ?? null; echo $fetchUrl ? " Next page found.\n" : " No more pages.\n";
+        } catch (RequestException $e) { echo "ERROR fetching page $pageCount: " . $e->getMessage(); if ($e->hasResponse()) { echo " Response: " . $e->getResponse()->getBody()->getContents(); } throw $e; } // Rethrow or handle
+    }
+    echo "--- Finished Dynamics fetch. Total records: " . count($allContacts) . " ---\n"; return $allContacts;
+}
+
+// --- Function to Write Data to CSV ---
+function writeContactsToCsv($contacts, $filename, $fieldMap) {
+    if (!$contacts) return false;
+    $headers = array_keys($fieldMap); $rowsWritten = 0;
+    echo "Writing " . count($contacts) . " records to $filename\n";
+    try {
+        $fp = fopen($filename, 'w'); if ($fp === false) throw new Exception("Cannot open file");
+        fputcsv($fp, $headers); // Write header
+        foreach ($contacts as $contact) {
+            $row = []; $hasEmail = false;
+            foreach ($fieldMap as $csvHeader => $dynamicsField) {
+                $value = $contact[$dynamicsField] ?? "";
+                $row[] = $value;
+                if ($csvHeader === "EMAIL" &amp;&amp; !empty($value)) $hasEmail = true;
+            }
+             if (!$hasEmail) { echo "Skipping record without EMAIL...\n"; continue; }
+             fputcsv($fp, $row); $rowsWritten++;
+        } fclose($fp); echo "Wrote $rowsWritten valid records.\n"; return $rowsWritten > 0;
+    } catch (Exception $e) { echo "ERROR writing CSV $filename: " . $e->getMessage() . "\n"; return false; }
+}
+
+// --- Function to Upload CSV to S3 ---
+function uploadCsvToS3($localFilename, $bucket, $s3Key) {
+    global $s3Region;
+    echo "Uploading $localFilename to S3 s3://$bucket/$s3Key\n";
+    try {
+        // Ensure AWS credentials configured (env vars, ~/.aws/credentials, IAM role)
+        $s3Client = new S3Client(['region' => $s3Region, 'version' => 'latest' /* Add credentials if not using env vars/profile */ ]);
+        $s3Client->putObject(['Bucket' => $bucket, 'Key' => $s3Key, 'SourceFile' => $localFilename]);
+        echo "S3 Upload successful.\n"; return true;
+    } catch (AwsException $e) { echo "ERROR uploading to S3: " . $e->getMessage() . "\n"; return false; }
+     catch (Exception $e) { echo "ERROR during S3 upload: " . $e->getMessage() . "\n"; return false; }
+}
+
+// --- Function to Trigger Netcore Bulk API ---
+function triggerNetcoreBulkUpload($s3FilePath) {
+    global $netcoreApiKey, $netcoreListId, $netcoreNotifyEmail, $netcoreCallbackUrl, $netcoreBulkApiUrl;
+    echo "Triggering Netcore bulk upload for S3 path: $s3FilePath\n";
+    try {
+        $params = ['type' => 'contact', 'activity' => 'bulkupload', 'apikey' => $netcoreApiKey, 'path' => $s3FilePath, 'listid' => $netcoreListId];
+        if ($netcoreNotifyEmail) $params['notifyemail'] = $netcoreNotifyEmail;
+        if ($netcoreCallbackUrl) $params['callback'] = $netcoreCallbackUrl; // URL encode if needed
+        $url = $netcoreBulkApiUrl . '?' . http_build_query($params);
+        echo "Calling Netcore API: " . htmlspecialchars($url) . "\n";
+        $httpClient = new GuzzleClient(['timeout' => 45.0]);
+        $response = $httpClient->request('GET', $url);
+        $body = $response->getBody()->getContents();
+        echo "Netcore API Status Code: " . $response->getStatusCode() . "\n"; echo "Netcore Response:\n" . $body . "\n";
+        if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) throw new Exception("Netcore API Error: Status " . $response->getStatusCode());
+        // TODO: Parse $body JSON to confirm job submission
+        return true;
+    } catch (Exception $e) { echo "ERROR calling Netcore API: " . $e->getMessage() . "\n"; return false; }
+}
+
+// --- Main Execution Logic ---
+$startTime = microtime(true); echo "--- Starting Process [" . date('Y-m-d H:i:s') . "] ---\n";
+$csvFieldMap = ["EMAIL"=>"emailaddress1", "MOBILE"=>"mobilephone", "FIRST_NAME"=>"firstname", "LAST_NAME"=>"lastname"]; // &lt;&lt;&lt; VERIFY
+$contacts = null; $localCsv = null; $s3Key = null; $uploadOk = false;
+try {
+    $contacts = fetchAllDynamicsContacts($dynamicsFieldsSelect, $dynamicsFilter);
+    if (!$contacts) { echo "FATAL: Failed or no data from Dynamics.\n"; exit(1); }
+
+    $timestamp = date('Ymd_His'); $localCsv = "dynamics_contacts_{$timestamp}.csv";
+    if (!writeContactsToCsv($contacts, $localCsv, $csvFieldMap)) { echo "FATAL: Failed writing CSV.\n"; exit(1); }
+
+    $s3Key = ($s3FolderPath ?: "") . "contacts_{$timestamp}.csv";
+    $uploadOk = uploadCsvToS3($localCsv, $s3BucketName, $s3Key);
+
+} catch (Exception $e) { echo "FATAL ERROR during fetch/write/upload: " . $e->getMessage() . "\n"; }
+finally {
+    if ($localCsv &amp;&amp; file_exists($localCsv)) { // Cleanup
+        if (unlink($localCsv)) { echo "Removed local file: $localCsv\n"; } else { echo "Warn: Failed to remove $localCsv\n";}
+    }
+}
+if (!$uploadOk) { echo "FATAL: Failed S3 upload.\n"; exit(1); }
+
+if (!triggerNetcoreBulkUpload($s3Key)) { echo "ERROR: Failed Netcore trigger.\n"; }
+else { echo "Process initiated. Check Netcore status.\n"; }
+
+echo "--- Process Finished. Duration: " . (microtime(true) - $startTime) . "s ---\n";
+
+?&gt;
+                </code></pre>
+            </div>
+
+        </div></div><script>
+        // JavaScript for tabs (Same as previous examples)
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.tab-button');
+            const panes = document.querySelectorAll('.tab-pane');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetId = tab.getAttribute('data-target');
+                    tabs.forEach(t => t.classList.remove('active'));
+                    panes.forEach(p => p.classList.remove('active'));
+                    tab.classList.add('active');
+                    const targetPane = document.querySelector(targetId);
+                    if (targetPane) { targetPane.classList.add('active'); }
+                    else { console.error("Target pane not found:", targetId); }
+                });
+            });
+             // Log script load
+             const initialActiveTab = document.querySelector('.tab-button.active');
+             console.log(`Tab script loaded. Initial active: ${initialActiveTab ? initialActiveTab.getAttribute('data-target') : 'None'}`);
+        });
+    </script>
+
+</body>
+</html>
